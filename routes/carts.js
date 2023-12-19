@@ -1,0 +1,91 @@
+const express = require("express");
+const router = express.Router();
+const db = require("../services/mongodb");
+const adminAuth = require("../middlewares/adminAuth");
+const cartSchema = require("../models/cart");
+const { ObjectId } = require("mongodb");
+const { validate } = require("../utils/common.js");
+const customerAuth = require("../middlewares/customerAuth");
+
+router.get("/", customerAuth, async (req, res) => {
+  const cart = await db
+    .getCollection("blackRainbow", "carts")
+    .aggregate([
+      {
+        $match: {
+          userId: new ObjectId(req.user._id),
+        },
+      },
+      {
+        $lookup: {
+          from: "items",
+          localField: "itemId", // field in the "carts" collection
+          foreignField: "_id", // field in the "items" collection
+          as: "cartItems",
+        },
+      },
+    ])
+    .toArray();
+  return res.send(cart);
+});
+
+router.post("/:itemId", customerAuth, async (req, res) => {
+  const r = validate(cartSchema, req.body, res);
+  if (r) return;
+
+  if (!ObjectId.isValid(req.params.itemId))
+    return res.status(400).send("ایدی کالا معتبر نیست");
+  let { quantity } = req.body;
+  if (!quantity) quantity = 1;
+  quantity = parseInt(quantity);
+  const item = await db.findOne("items", {
+    _id: new ObjectId(req.params.itemId),
+  });
+  if (!item) return res.status(404).send("کالا وجود ندارد");
+  if (quantity > item.stock)
+    return res.status(400).send("تعداد درخواستی بیشتر از موجودی انبار است");
+  try {
+    await db.insertOne("carts", {
+      userId: new ObjectId(req.user._id),
+      quantity,
+      itemId: new ObjectId(req.params.itemId),
+    });
+    return res.send("کالا به سبد اضافه  شد");
+  } catch (error) {
+    if (error.code === 11000) return res.status(400).send("کالا در سبد میباشد");
+  }
+});
+router.put("/:cartItemId", adminAuth, async (req, res) => {
+  const r = validate(cartSchema, req.body, res);
+  if (r) return;
+
+  if (!ObjectId.isValid(req.params.cartItemId))
+    return res.status(400).send("ایدی کالا معتبر نیست");
+  let { quantity } = req.body;
+
+  quantity = parseInt(quantity);
+  const cartItem = await db.findOne("carts", {
+    _id: new ObjectId(req.params.cartItemId),
+  });
+  if (!cartItem) return res.status(404).send("کالا وجود ندارد");
+  const item = await db.findOne("items", { _id: cartItem.itemId });
+
+  if (quantity > item.stock)
+    return res.status(400).send("تعداد درخواستی بیشتر از موجودی انبار است");
+  if (quantity === 0) {
+    await db.deleteOne("carts", {
+      _id: new ObjectId(req.params.cartItemId),
+    });
+    return res.send("کالا حذف شد");
+  }
+  await db.updateOne(
+    "carts",
+    {
+      _id: new ObjectId(req.params.cartItemId),
+    },
+    { quantity }
+  );
+  return res.send("کالا ادیت شد");
+});
+
+module.exports = router;

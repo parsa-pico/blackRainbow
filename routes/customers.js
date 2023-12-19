@@ -12,7 +12,7 @@ const {
   codeExpired,
 } = require("../utils/common.js");
 const loginSchema = require("../models/login");
-const studentSchema = require("../models/student");
+const customerSchema = require("../models/customer");
 const config = require("../configs.json");
 router.get("/rooms", customerAuth, async (req, res) => {
   const results = await (await db.find("rooms", {})).toArray();
@@ -43,7 +43,7 @@ router.post("/login", async (req, res) => {
 });
 
 router.post("/sign-up", async (req, res) => {
-  const r = validate(studentSchema, req.body, res);
+  const r = validate(customerSchema, req.body, res);
   if (r) return;
   const { phoneNumber, password } = req.body;
   user = await db.findOne("customers", { phoneNumber });
