@@ -35,8 +35,8 @@ router.post("/:itemId", customerAuth, async (req, res) => {
 
   if (!ObjectId.isValid(req.params.itemId))
     return res.status(400).send("ایدی کالا معتبر نیست");
-  let { quantity } = req.body;
-  if (!quantity) quantity = 1;
+  let { quantity, options } = req.body;
+
   quantity = parseInt(quantity);
   const item = await db.findOne("items", {
     _id: new ObjectId(req.params.itemId),
@@ -45,12 +45,14 @@ router.post("/:itemId", customerAuth, async (req, res) => {
   if (quantity > item.stock)
     return res.status(400).send("تعداد درخواستی بیشتر از موجودی انبار است");
   try {
-    await db.insertOne("carts", {
+    const obj = {
       userId: new ObjectId(req.user._id),
       quantity,
       itemId: new ObjectId(req.params.itemId),
-    });
-    return res.send("کالا به سبد اضافه  شد");
+    };
+    if (options) obj[options] = options;
+    const result = await db.insertOne("carts", obj);
+    return res.send({ ...result, msg: "کالا به سبد اضافه  شد" });
   } catch (error) {
     if (error.code === 11000) return res.status(400).send("کالا در سبد میباشد");
   }
@@ -61,7 +63,7 @@ router.put("/:cartItemId", adminAuth, async (req, res) => {
 
   if (!ObjectId.isValid(req.params.cartItemId))
     return res.status(400).send("ایدی کالا معتبر نیست");
-  let { quantity } = req.body;
+  let { quantity, options } = req.body;
 
   quantity = parseInt(quantity);
   const cartItem = await db.findOne("carts", {
@@ -78,12 +80,14 @@ router.put("/:cartItemId", adminAuth, async (req, res) => {
     });
     return res.send("کالا حذف شد");
   }
+  const obj = { quantity };
+  if (options) obj[options] = options;
   await db.updateOne(
     "carts",
     {
       _id: new ObjectId(req.params.cartItemId),
     },
-    { quantity }
+    obj
   );
   return res.send("کالا ادیت شد");
 });

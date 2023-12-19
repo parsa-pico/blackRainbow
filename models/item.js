@@ -7,4 +7,13 @@ module.exports = {
   price: Joi.number().required().max(1e9),
   description: Joi.string().required().max(2000),
   stock: Joi.number().required(),
+  options: Joi.custom((value, helper) => {
+    if (
+      Array.isArray(value) &&
+      value.length >= 0 &&
+      value.every((opt) => typeof opt === "string")
+    )
+      return value;
+    else return helper.error("any.custom");
+  }).messages({ "any.custom": "فرمت انتخاب ها صحیح نیست" }),
 };

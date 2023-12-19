@@ -42,15 +42,16 @@ router.put("/:id", adminAuth, async (req, res) => {
   return res.send("کالا ادیت شد");
 });
 router.delete("/:id", adminAuth, async (req, res) => {
-  const r = validate(optionSchema, req.body, res);
-  if (r) return;
-
   if (!ObjectId.isValid(req.params.id))
     return res.status(400).send("ایدی انتخاب معتبر نیست");
   const query = { _id: new ObjectId(req.params.id) };
-  const item = await db.findOne("items", query);
+  const item = await db.findOne("options", query);
   if (!item) return res.status(404).send("انتخاب پیدا نشد");
-
+  const relatedItem = await db.findOne("items", {
+    options: new ObjectId(req.params.id),
+  });
+  if (relatedItem)
+    return res.status(403).send("این انتخاب،مربوط به یک کالا است");
   await db.deleteOne("options", query);
   return res.send("انتخاب حذف شد");
 });

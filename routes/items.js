@@ -45,17 +45,19 @@ router.put("/:id", adminAuth, async (req, res) => {
   const query = { _id: new ObjectId(req.params.id) };
   const item = await db.findOne("items", query);
   if (!item) return res.status(404).send("محصول پیدا نشد");
-  const { category } = req.body;
+  let { category, options } = req.body;
   if (!ObjectId.isValid(category))
     return res.status(400).send("کتگوری معتبر نیست");
   const foundCategory = await db.findOne("categories", {
     _id: new ObjectId(category),
   });
+  obj = { ...req.body, category: new ObjectId(category) };
+  if (options && options.length > 0) {
+    options = options.map((opt) => new ObjectId(opt));
+    obj.options = options;
+  }
   if (!foundCategory) return res.status(404).send("این کتگوری وجود ندارد");
-  await db.updateOne("items", query, {
-    ...req.body,
-    category: new ObjectId(category),
-  });
+  await db.updateOne("items", query, obj);
   return res.send("کالا ادیت شد");
 });
 router.delete("/:id", adminAuth, async (req, res) => {

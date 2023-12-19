@@ -9,10 +9,6 @@ const fs = require("fs").promises;
 const path = require("path");
 
 module.exports = async function (app) {
-  const routes_strings = await fs.readdir(
-    path.resolve(__dirname, "..", "routes")
-  );
-
   app.use(cors());
   const server = http.createServer(app);
   const io = socketIo(server, { cors: { credentials: true } });
@@ -20,6 +16,10 @@ module.exports = async function (app) {
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  const routes_strings = await fs.readdir(
+    path.resolve(__dirname, "..", "routes")
+  );
   for (let route of routes_strings)
     app.use(`/${route.split(".")[0]}`, require(`../routes/${route}`));
 
