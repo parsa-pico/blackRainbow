@@ -6,11 +6,8 @@ const db = require("../services/mongodb");
 const { default: axios } = require("axios");
 const bcrypt = require("bcrypt");
 const customerAuth = require("../middlewares/customerAuth");
-const {
-  validate,
-  generateRandomCode,
-  codeExpired,
-} = require("../utils/common.js");
+const validate = require("../middlewares/validate");
+const { generateRandomCode, codeExpired } = require("../utils/common.js");
 const loginSchema = require("../models/login");
 const customerSchema = require("../models/customer");
 const config = require("../configs.json");
@@ -19,9 +16,7 @@ router.get("/rooms", customerAuth, async (req, res) => {
   return res.send(results);
 });
 
-router.post("/login", async (req, res) => {
-  const r = validate(loginSchema, req.body, res);
-  if (r) return;
+router.post("/login", validate(loginSchema), async (req, res) => {
   const { phoneNumber, password } = req.body;
   const user = await db.findOne("customers", { phoneNumber });
   if (!user) return res.status(404).send("کاربر یافت نشد");
@@ -42,9 +37,7 @@ router.post("/login", async (req, res) => {
   return res.send(token);
 });
 
-router.post("/sign-up", async (req, res) => {
-  const r = validate(customerSchema, req.body, res);
-  if (r) return;
+router.post("/sign-up", validate(customerSchema), async (req, res) => {
   const { phoneNumber, password } = req.body;
   user = await db.findOne("customers", { phoneNumber });
   if (user) return res.status(409).send("شماره تلفن تکراری است");

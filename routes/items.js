@@ -4,13 +4,10 @@ const db = require("../services/mongodb");
 const adminAuth = require("../middlewares/adminAuth");
 const itemSchema = require("../models/item");
 const { ObjectId } = require("mongodb");
-const { validate } = require("../utils/common.js");
+const validate = require("../middlewares/validate");
 const customerAuth = require("../middlewares/customerAuth");
 
-router.get("/:id", customerAuth, async (req, res) => {
-  const r = validate(itemSchema, req.body, res);
-  if (r) return;
-
+router.get("/:id", customerAuth, validate(itemSchema), async (req, res) => {
   if (!ObjectId.isValid(req.params.id))
     return res.status(400).send("ایدی کالا معتبر نیست");
   const query = { _id: new ObjectId(req.params.id) };
@@ -20,9 +17,7 @@ router.get("/:id", customerAuth, async (req, res) => {
   return res.send(item);
 });
 
-router.post("/", adminAuth, async (req, res) => {
-  const r = validate(itemSchema, req.body, res);
-  if (r) return;
+router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
   const { category } = req.body;
   if (!ObjectId.isValid(category))
     return res.status(400).send("کتگوری معتبر نیست");
@@ -36,10 +31,7 @@ router.post("/", adminAuth, async (req, res) => {
   });
   return res.send("کالا ثبت شد");
 });
-router.put("/:id", adminAuth, async (req, res) => {
-  const r = validate(itemSchema, req.body, res);
-  if (r) return;
-
+router.put("/:id", adminAuth, validate(itemSchema), async (req, res) => {
   if (!ObjectId.isValid(req.params.id))
     return res.status(400).send("ایدی کالا معتبر نیست");
   const query = { _id: new ObjectId(req.params.id) };
@@ -60,10 +52,7 @@ router.put("/:id", adminAuth, async (req, res) => {
   await db.updateOne("items", query, obj);
   return res.send("کالا ادیت شد");
 });
-router.delete("/:id", adminAuth, async (req, res) => {
-  const r = validate(itemSchema, req.body, res);
-  if (r) return;
-
+router.delete("/:id", adminAuth, validate(itemSchema), async (req, res) => {
   if (!ObjectId.isValid(req.params.id))
     return res.status(400).send("ایدی کالا معتبر نیست");
   const query = { _id: new ObjectId(req.params.id) };

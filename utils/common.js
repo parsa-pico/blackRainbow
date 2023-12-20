@@ -1,8 +1,7 @@
 const Joi = require("joi");
 function validate(schema, obj, res) {
   const { error } = Joi.object(schema).validate(obj);
-  if (error) return res.status(400).send(error.message);
-  else return null;
+  return error ? error.message : null;
 }
 function isObject(variable) {
   return typeof variable === "object" && variable !== null;

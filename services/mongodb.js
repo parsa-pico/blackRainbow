@@ -30,9 +30,9 @@ module.exports = class DB {
     const collection = this.getCollection(db, mycollection);
     return await collection.countDocuments();
   }
-  static async insertOne(mycollection, data, db = dataBase) {
+  static async insertOne(mycollection, data, db = dataBase, opt = {}) {
     const collection = this.getCollection(db, mycollection);
-    return await collection.insertOne(data);
+    return await collection.insertOne(data, opt);
   }
   static async insertMany(mycollection, dataArray, db = dataBase) {
     const collection = this.getCollection(db, mycollection);
@@ -72,9 +72,9 @@ module.exports = class DB {
     const collection = this.getCollection(db, mycollection);
     return await collection.deleteOne(queryObj);
   }
-  static async deleteMany(mycollection, queryObj, db = dataBase) {
+  static async deleteMany(mycollection, queryObj, db = dataBase, opt = {}) {
     const collection = this.getCollection(db, mycollection);
-    return await collection.deleteMany(queryObj);
+    return await collection.deleteMany(queryObj, opt);
   }
   static async findOneAndDelete(mycollection, queryObj, db = dataBase) {
     const collection = this.getCollection(db, mycollection);
