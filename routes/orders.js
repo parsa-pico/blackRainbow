@@ -50,12 +50,17 @@ router.post(
     };
     if (schedule) obj["schedule"] = new Date(schedule);
     const { insertedId } = await db.insertOne("orders", obj);
-    cart = cart.map((c) => ({
-      quantity: c.quantity,
-      itemId: new ObjectId(c.itemId),
-      orderId: new ObjectId(insertedId),
-      price: c.price,
-    }));
+    cart = cart.map((c) => {
+      console.log(c);
+      const obj = {
+        quantity: c.quantity,
+        itemId: new ObjectId(c.itemId),
+        orderId: new ObjectId(insertedId),
+        price: c.price,
+      };
+      if (c.options) obj.options = c.options;
+      return obj;
+    });
     const bulkOperations = cart.map(({ itemId, quantity }) => ({
       updateOne: {
         filter: { _id: itemId },
