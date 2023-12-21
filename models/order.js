@@ -7,4 +7,5 @@ module.exports = {
   address: Joi.string().required().max(500),
   description: Joi.string().max(600),
   postalCode: Joi.string().required().max(30),
+  schedule: Joi.date(),
 };

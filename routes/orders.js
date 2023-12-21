@@ -7,12 +7,7 @@ const { ObjectId } = require("mongodb");
 const customerAuth = require("../middlewares/customerAuth");
 const validate = require("../middlewares/validate");
 const Order = require("../entities/Order");
-orderStatus = {
-  1: "در انتظار پرداخت",
-  2: "پرداخت موفق",
-  3: "ارسال شده",
-  4: "پرداخت ناموفق",
-};
+OrderStatus = require("../enums/orderStatus");
 router.get("/:id", customerAuth, async (req, res) => {
   if (!ObjectId.isValid(req.params.id))
     return res.status(400).send("ایدی خرید معتبر نیست");
@@ -36,25 +31,41 @@ router.post(
     // session.endSession();
     const order = new Order(req.user._id);
     let cart = await order.getCart();
-    let totalPrice = await order.getTotalPrice();
+    for (let item of cart) {
+      if (item.stock - item.quantity < 0)
+        return res.status(400).send(`${item.productName} out of stock`);
+    }
 
-    const { insertedId } = await db.insertOne("orders", {
+    if (cart.length === 0) return res.status(400).send("سبد خرید شما خالی است");
+    let totalPrice = await order.getTotalPrice();
+    const { schedule } = req.body;
+    const obj = {
       ...req.body,
       userId: new ObjectId(req.user._id),
       createdAt: new Date(),
-      status: 1,
+      status: OrderStatus.pending,
       updatedAt: new Date(),
       totalPrice,
       remaningPrice: totalPrice,
-    });
+    };
+    if (schedule) obj["schedule"] = new Date(schedule);
+    const { insertedId } = await db.insertOne("orders", obj);
     cart = cart.map((c) => ({
       quantity: c.quantity,
       itemId: new ObjectId(c.itemId),
       orderId: new ObjectId(insertedId),
       price: c.price,
     }));
+    const bulkOperations = cart.map(({ itemId, quantity }) => ({
+      updateOne: {
+        filter: { _id: itemId },
+        update: { $inc: { stock: -quantity } },
+      },
+    }));
+    await db.getCollection(undefined, "items").bulkWrite(bulkOperations);
     await db.insertMany("orderItems", cart);
-    return res.send("خرید ثبت شد");
+    //TODO:remove items from cart
+    return res.send({ insertedId, msg: "خرید ثبت شد" });
   }
 );
 

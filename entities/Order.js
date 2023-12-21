@@ -31,6 +31,8 @@ class Order {
             userId: 1,
             options: 1,
             price: "$cartItem.price",
+            stock: "$cartItem.stock",
+            productName: "$cartItem.productName",
             _id: 0,
           },
         },
@@ -68,7 +70,7 @@ class Order {
         },
       ])
       .toArray();
-    totalPrice = parseFloat(totalPrice[0].totalPrice.toFixed(2));
+    totalPrice = parseInt(totalPrice[0].totalPrice);
     return totalPrice;
   }
 }
