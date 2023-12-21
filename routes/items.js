@@ -22,6 +22,10 @@ async function checkCategory(category) {
   });
   return foundCategory;
 }
+router.post("/test", async (req, res) => {
+  console.log(req.body);
+  return res.send("ok");
+});
 router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
   // TODO:create a collection of tags and use those
   const { category, subCategory } = req.body;

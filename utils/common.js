@@ -1,4 +1,9 @@
 const Joi = require("joi");
+const path = require("path");
+function getPicturePath(filename) {
+  const root = path.resolve(__dirname, "..", "pictures");
+  return `${root}/${filename}`;
+}
 function validate(schema, obj, res) {
   const { error } = Joi.object(schema).validate(obj);
   return error ? error.message : null;
@@ -47,3 +52,4 @@ exports.codeExpired = codeExpired;
 exports.validate = validate;
 exports.validateDaysObject = validateDaysObject;
 exports.generateRandomCode = generateRandomCode;
+exports.getPicturePath = getPicturePath;
