@@ -7,11 +7,53 @@ const { ObjectId } = require("mongodb");
 const validate = require("../middlewares/validate");
 const customerAuth = require("../middlewares/customerAuth");
 
-router.get("/:id", customerAuth, validate(itemSchema), async (req, res) => {
-  if (!ObjectId.isValid(req.params.id))
-    return res.status(400).send("ایدی کالا معتبر نیست");
+router.get("/:id", async (req, res) => {
   const query = { _id: new ObjectId(req.params.id) };
-  const item = await db.findOne("items", query);
+  const item = await db
+    .getCollection(undefined, "items")
+    .aggregate([
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "categoryData",
+        },
+      },
+      {
+        $unwind: "$categoryData",
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "subCategory",
+          foreignField: "_id",
+          as: "subCategoryData",
+        },
+      },
+      {
+        $unwind: "$subCategoryData",
+      },
+      {
+        $lookup: {
+          from: "options",
+          localField: "options",
+          foreignField: "_id",
+          as: "optionsData",
+        },
+      },
+      {
+        $limit: 1, // Limit to one document
+      },
+      {
+        $project: {
+          category: 0,
+          options: 0,
+          subCategory: 0,
+        },
+      },
+    ])
+    .toArray();
   if (!item) return res.status(404).send("محصول پیدا نشد");
 
   return res.send(item);

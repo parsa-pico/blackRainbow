@@ -77,7 +77,12 @@ router.post(
     await db.updateOne(
       "orders",
       { _id: payment.orderId },
-      { status: OrderStatus.successful }
+      { status: OrderStatus.successful, remaningPrice: 0 }
+    );
+    await db.updateMany(
+      "orderItems",
+      { orderId: payment.orderId },
+      { isPayed: true }
     );
     return res.send({ msg: "پرداخت با موفقیت تایید شد" });
   }

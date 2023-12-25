@@ -36,6 +36,29 @@ router.post("/login", validate(loginSchema), async (req, res) => {
   );
   return res.send(token);
 });
+router.post("/login-sms", validate(loginSchema), async (req, res) => {
+  const { phoneNumber, code } = req.body;
+  const user = await db.findOne("customers", { phoneNumber });
+  if (!user) return res.status(404).send("کاربر یافت نشد");
+  const threshold = config.codeExpires; //minutes
+  const isExpired = codeExpired(user.codeTime, threshold);
+  if (isExpired) return res.status(403).send("کد منقضی شده است");
+
+  const correctCode = user.code === code;
+  if (!correctCode) return res.status(400).send("کد اشتباه است");
+  const { firstName, lastName, _id, isAdmin } = user;
+  const token = jwt.sign(
+    {
+      firstName,
+      lastName,
+      phoneNumber,
+      _id,
+      isAdmin: isAdmin || false,
+    },
+    process.env.JWT_PRIVATE_KEY
+  );
+  return res.send(token);
+});
 
 router.post("/sign-up", validate(customerSchema), async (req, res) => {
   const { phoneNumber, password } = req.body;
