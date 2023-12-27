@@ -11,14 +11,28 @@ router.get("/", customerAuth, async (req, res) => {
 
   return res.send(categories);
 });
+router.post("/get-by-title", customerAuth, async (req, res) => {
+  const { title } = req.body;
+  const categories = await (
+    await db
+      .getDbColletion("tags")
+      .find({
+        title: { $regex: new RegExp(title) },
+      })
+      .limit(10)
+  ).toArray();
+
+  return res.send(categories);
+});
 
 router.post("/", adminAuth, async (req, res) => {
   const { title } = req.body;
   if (!title) return res.status(400).send(" نام اجباری است");
 
-  await db.insertOne("tags", { title });
-  return res.send({ msg: "تگ اضافه شد" });
+  const { insertedId } = await db.insertOne("tags", { title });
+  return res.send({ msg: "تگ اضافه شد", obj: { _id: insertedId, title } });
 });
+
 router.put("/:tagId", adminAuth, async (req, res) => {
   const tagId = req.params.tagId;
   const { title } = req.body;

@@ -13,6 +13,9 @@ router.get("/:id", async (req, res) => {
     .getCollection(undefined, "items")
     .aggregate([
       {
+        $match: query,
+      },
+      {
         $lookup: {
           from: "categories",
           localField: "category",
@@ -64,9 +67,17 @@ async function checkCategory(category) {
   });
   return foundCategory;
 }
-router.post("/test", async (req, res) => {
-  console.log(req.body);
-  return res.send("ok");
+router.post("/get-by-keyword", async (req, res) => {
+  const { search } = req.body;
+  if (!search) return res.status(400).send("سرچ نباید خالی باشد");
+  const result = await (
+    await db
+      .getDbColletion("items")
+      .find({ $text: { $search: search } }, { score: { $meta: "textScore" } })
+      .sort({ score: { $meta: "textScore" } })
+  ).toArray();
+
+  return res.send(result);
 });
 router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
   // TODO:create a collection of tags and use those
@@ -75,6 +86,8 @@ router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
   const foundSubCategory = await checkCategory(subCategory);
   if (!foundCategory || !foundSubCategory)
     return res.status(404).send("کتگوری پیدا نشد");
+  if (foundCategory._id !== foundSubCategory.parentId)
+    return res.status(400).send("کتگوری و ساب کتگوری مطابقت ندارد");
   await db.insertOne("items", {
     ...req.body,
     category: new ObjectId(category),
@@ -92,7 +105,8 @@ router.put("/:id", adminAuth, validate(itemSchema), async (req, res) => {
   const foundSubCategory = await checkCategory(subCategory);
   if (!foundCategory || !foundSubCategory)
     return res.status(404).send("کتگوری پیدا نشد");
-
+  if (foundCategory._id !== foundSubCategory.parentId)
+    return res.status(400).send("کتگوری و ساب کتگوری مطابقت ندارد");
   obj = {
     ...req.body,
     category: new ObjectId(category),

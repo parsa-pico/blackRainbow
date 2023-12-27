@@ -7,11 +7,23 @@ const { ObjectId } = require("mongodb");
 const validate = require("../middlewares/validate");
 const customerAuth = require("../middlewares/customerAuth");
 
+router.post("/get-options", adminAuth, async (req, res) => {
+  const { searchValue } = req.body;
+  console.log(searchValue);
+  const regex = new RegExp(searchValue);
+  let query = {};
+  if (searchValue)
+    query = {
+      $or: [{ title: { $regex: regex } }, { localTitle: { $regex: regex } }],
+    };
+  const options = await (await db.find("options", query)).toArray();
+  return res.send(options);
+});
 router.get("/:id", customerAuth, async (req, res) => {
   if (!ObjectId.isValid(req.params.id))
     return res.status(400).send("ایدی انتخاب معتبر نیست");
   const query = { _id: new ObjectId(req.params.id) };
-  const item = await db.findOne("items", query);
+  const item = await db.findOne("options", query);
   if (!item) return res.status(404).send("انتخاب پیدا نشد");
 
   return res.send(item);
@@ -24,8 +36,6 @@ router.post("/", adminAuth, validate(optionSchema), async (req, res) => {
   return res.send("انتخاب ثبت شد");
 });
 router.put("/:id", adminAuth, validate(optionSchema), async (req, res) => {
-  if (!ObjectId.isValid(req.params.id))
-    return res.status(400).send("ایدی انتخاب معتبر نیست");
   const query = { _id: new ObjectId(req.params.id) };
   const item = await db.findOne("options", query);
   if (!item) return res.status(404).send("انتخاب پیدا نشد");
@@ -33,7 +43,7 @@ router.put("/:id", adminAuth, validate(optionSchema), async (req, res) => {
   await db.updateOne("options", query, {
     ...req.body,
   });
-  return res.send("کالا ادیت شد");
+  return res.send("انتخاب ادیت شد");
 });
 router.delete("/:id", adminAuth, async (req, res) => {
   if (!ObjectId.isValid(req.params.id))

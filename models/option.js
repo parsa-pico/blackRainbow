@@ -1,6 +1,7 @@
 const Joi = require("joi");
 
 module.exports = {
+  localName: Joi.string().required().max(100),
   title: Joi.string().required().max(100),
   choices: Joi.required()
     .custom((value, helper) => {

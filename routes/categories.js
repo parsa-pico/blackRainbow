@@ -8,7 +8,34 @@ const validate = require("../middlewares/validate");
 const customerAuth = require("../middlewares/customerAuth");
 
 router.get("/", customerAuth, async (req, res) => {
-  const categories = await (await db.find("categories", {})).toArray();
+  const categories = await (
+    await db.find("categories", { parentId })
+  ).toArray();
+
+  return res.send(categories);
+});
+router.post("/get-by-title", customerAuth, async (req, res) => {
+  const { title } = req.body;
+  const categories = await (
+    await db
+      .getCollection(undefined, "categories")
+      .find({
+        parentId: null,
+        title: { $regex: new RegExp(title) },
+      })
+      .limit(10)
+  ).toArray();
+
+  return res.send(categories);
+});
+router.post("/get-sub", customerAuth, async (req, res) => {
+  let { parentId } = req.body;
+  parentId = new ObjectId(parentId);
+  const categories = await (
+    await db.getDbColletion("categories").find({
+      parentId,
+    })
+  ).toArray();
 
   return res.send(categories);
 });
@@ -25,8 +52,15 @@ router.post("/", adminAuth, async (req, res) => {
     obj.parentId = new ObjectId(parentId);
   }
 
-  await db.insertOne("categories", obj);
-  return res.send({ msg: "کتگوری اضافه شد" });
+  const { insertedId } = await db.insertOne("categories", obj);
+  return res.send({
+    msg: "کتگوری اضافه شد",
+    obj: {
+      _id: insertedId,
+      title,
+      parentId,
+    },
+  });
 });
 router.put("/:categoryId", adminAuth, async (req, res) => {
   const categoryId = req.params.categoryId;

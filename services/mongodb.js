@@ -23,6 +23,9 @@ module.exports = class DB {
       if (this.client) await this.client.close();
     }
   }
+  static getDbColletion(collection) {
+    return this.client.db(dataBase).collection(collection);
+  }
   static getCollection(db = dataBase, collection) {
     return this.client.db(db).collection(collection);
   }

@@ -104,16 +104,17 @@ router.post("/login-sms", validate(loginSmsSchema), async (req, res) => {
   const correctCode = user.code === code;
   if (!correctCode) return res.status(400).send("کد اشتباه است");
   const { firstName, lastName, _id, isAdmin } = user;
-  const token = jwt.sign(
-    {
-      firstName,
-      lastName,
-      phoneNumber,
-      _id,
-      isAdmin: isAdmin || false,
-    },
-    process.env.JWT_PRIVATE_KEY
-  );
+  const userInfo = {
+    firstName,
+    lastName,
+    phoneNumber,
+    _id,
+    isAdmin: isAdmin || false,
+  };
+  const token = jwt.sign(userInfo, process.env.JWT_PRIVATE_KEY, {
+    expiresIn: "30d",
+  });
+  userInfo.exp = jwt.decode(token).exp * 1000; //convert it to millis
 
   res.cookie("token", token, {
     maxAge: 1000 * 60 * 60 * 24 * 30, //max age:30 days
@@ -121,7 +122,7 @@ router.post("/login-sms", validate(loginSmsSchema), async (req, res) => {
     secure: process.env.IS_HTTPS,
   });
 
-  return res.send({ msg: "ورود انجام شد" });
+  return res.send({ msg: "ورود انجام شد", userInfo });
 });
 
 // router.post(
