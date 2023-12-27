@@ -8,6 +8,7 @@ module.exports = {
   price: Joi.number().required().max(1e9),
   description: Joi.string().required().max(2000),
   stock: Joi.number().required(),
+  private: Joi.boolean(),
   options: Joi.custom((value, helper) => {
     if (
       Array.isArray(value) &&
@@ -20,4 +21,5 @@ module.exports = {
 
   tags: Joi.array().required(),
   pictures: Joi.array().required(),
+  customersPicutures: Joi.array(),
 };

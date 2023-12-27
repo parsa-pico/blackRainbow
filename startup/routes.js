@@ -7,13 +7,14 @@ const https = require("https");
 const http = require("http");
 const fs = require("fs").promises;
 const path = require("path");
-
+const cookieParser = require("cookie-parser");
 module.exports = async function (app) {
-  app.use(cors());
+  //TODO:
+  app.use(cors({ credentials: true, origin: true, withCredentials: true }));
   const server = http.createServer(app);
-  const io = socketIo(server, { cors: { credentials: true } });
-  wsHandler(io);
-
+  // const io = socketIo(server, { cors: { credentials: true } });
+  // wsHandler(io);
+  app.use(cookieParser());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 

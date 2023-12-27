@@ -36,17 +36,17 @@ function generateRandomCode(len) {
   const randomDigit = Math.floor(Math.random() * (max - min + 1) + min);
   return randomDigit;
 }
-function getMinuteDifference(date1, date2) {
+function getSecondDifference(date1, date2) {
   const diffInMilliseconds = Math.abs(date2 - date1);
-  const diffInMinutes = Math.floor(diffInMilliseconds / (1000 * 60)); // 1 minute = 60,000 milliseconds
-  return diffInMinutes;
+  const diffInSeconds = Math.floor(diffInMilliseconds / 1000);
+  return diffInSeconds;
 }
 
-function codeExpired(codeTime, thresholdMin) {
+function codeExpired(codeTime, thresholdSeconds) {
   const now = new Date();
-  const diff = getMinuteDifference(now, codeTime);
-
-  return diff > thresholdMin;
+  const diff = getSecondDifference(now, codeTime);
+  const remaning = thresholdSeconds - diff;
+  return { isExpired: diff > thresholdSeconds, remaning };
 }
 exports.codeExpired = codeExpired;
 exports.validate = validate;

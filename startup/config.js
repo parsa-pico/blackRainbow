@@ -2,9 +2,11 @@ module.exports = function () {
   const env_inputs = [
     "JWT_PRIVATE_KEY",
     "MONGO_URL",
-    "ADMIN_PASS",
     "BACK_END_URL",
     "SMS_KEY",
+    "IS_HTTPS",
+    "FRONT_BASE_URL",
+    "ID_PAY_AUTH_KEY",
   ];
   for (let input of env_inputs) {
     if (!process.env[input]) {
