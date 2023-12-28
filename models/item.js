@@ -21,5 +21,5 @@ module.exports = {
 
   tags: Joi.array().required(),
   pictures: Joi.array().required(),
-  customersPicutures: Joi.array(),
+  customersPictures: Joi.array(),
 };

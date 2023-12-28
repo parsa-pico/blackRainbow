@@ -119,7 +119,8 @@ router.post("/login-sms", validate(loginSmsSchema), async (req, res) => {
   res.cookie("token", token, {
     maxAge: 1000 * 60 * 60 * 24 * 30, //max age:30 days
     httpOnly: true,
-    secure: process.env.IS_HTTPS,
+    secure: true,
+    // sameSite: "none", //TODO: CHANGE THESE OPTIONS
   });
 
   return res.send({ msg: "ورود انجام شد", userInfo });

@@ -23,8 +23,8 @@ const storage = multer.diskStorage({
     );
   },
 });
-
-const upload = multer({ storage });
+const maxSize = 1024 * 512; // in Bytes
+const upload = multer({ storage, limits: { fileSize: maxSize } });
 
 router.get("/:picturePath", async (req, res) => {
   const filePath = getPicturePath(req.params.picturePath);
@@ -40,6 +40,19 @@ router.post("/", adminAuth, upload.single("picture"), async (req, res) => {
     fileName: req.file.filename,
     msg: "عکس اپلود شد",
     filePath: req.file.path,
+  });
+});
+router.delete("/:picturePath", adminAuth, async (req, res) => {
+  const { picturePath } = req.params;
+  const filePath = getPicturePath(picturePath);
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    console.log("err", err);
+    if (err) return res.status(404).send("فایل وجود ندارد");
+    fs.unlink(filePath, (err) => {
+      if (err) return res.status(500).send("مشکلی در پاک کردن فایل پیش آمد");
+      console.log("err del:", err);
+      return res.send({ msg: "فایل پاک شد" });
+    });
   });
 });
 
