@@ -2,12 +2,14 @@ const express = require("express");
 const router = express.Router();
 const db = require("../services/mongodb");
 const adminAuth = require("../middlewares/adminAuth");
+const getUser = require("../middlewares/getUser");
 const itemSchema = require("../models/item");
 const { ObjectId } = require("mongodb");
 const validate = require("../middlewares/validate");
 const customerAuth = require("../middlewares/customerAuth");
+const Joi = require("joi");
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", getUser, async (req, res) => {
   const query = { _id: new ObjectId(req.params.id) };
   const item = await db
     .getCollection(undefined, "items")
@@ -15,6 +17,7 @@ router.get("/:id", async (req, res) => {
       {
         $match: query,
       },
+
       {
         $lookup: {
           from: "categories",
@@ -48,6 +51,7 @@ router.get("/:id", async (req, res) => {
       {
         $limit: 1, // Limit to one document
       },
+
       {
         $project: {
           category: 0,
@@ -57,7 +61,16 @@ router.get("/:id", async (req, res) => {
       },
     ])
     .toArray();
+
+  if (!req.user || !req.user.isAdmin)
+    await db.getDbColletion("items").updateOne(query, { $inc: { views: 1 } });
+
   if (!item) return res.status(404).send("محصول پیدا نشد");
+
+  // if (!req.user || !req.user.isAdmin)
+  //   db.updateOne("items", query, {
+  //     $inc: { views: 1 },
+  //   });
 
   return res.send(item);
 });
@@ -67,34 +80,52 @@ async function checkCategory(category) {
   });
   return foundCategory;
 }
-router.post("/get-by-keyword", async (req, res) => {
+router.post("/get-by-keyword", getUser, async (req, res) => {
   const { search } = req.body;
-  if (!search) return res.status(400).send("سرچ نباید خالی باشد");
-  const result = await (
-    await db
-      .getDbColletion("items")
-      .find({ $text: { $search: search } }, { score: { $meta: "textScore" } })
-      .sort({ score: { $meta: "textScore" } })
-  ).toArray();
-
+  const projcetObj = { productName: 1, price: 1, pictures: 1, stock: 1 };
+  let searchObj = {};
+  let result;
+  if (!req.user) searchObj.private = null;
+  if (search) {
+    searchObj.$text = { $search: search };
+    result = await (
+      await db
+        .getDbColletion("items")
+        .find(searchObj, { score: { $meta: "textScore" } })
+        .sort({ score: { $meta: "textScore" } })
+        .project(projcetObj)
+    ).toArray();
+  } else {
+    result = await (
+      await db.getDbColletion("items").find(searchObj).project(projcetObj)
+    ).toArray();
+  }
   return res.send(result);
 });
 router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
-  // TODO:create a collection of tags and use those
-  const { category, subCategory } = req.body;
+  let { category, subCategory, options } = req.body;
   const foundCategory = await checkCategory(category);
   const foundSubCategory = await checkCategory(subCategory);
   if (!foundCategory || !foundSubCategory)
     return res.status(404).send("کتگوری پیدا نشد");
-  if (foundCategory._id !== foundSubCategory.parentId)
+
+  if (foundCategory._id.toString() !== foundSubCategory.parentId.toString())
     return res.status(400).send("کتگوری و ساب کتگوری مطابقت ندارد");
-  await db.insertOne("items", {
+  obj = {
     ...req.body,
     category: new ObjectId(category),
     subCategory: new ObjectId(subCategory),
-  });
+    views: 0,
+  };
+  console.log(options);
+  if (options && options.length > 0) {
+    options = options.map((opt) => new ObjectId(opt));
+    obj.options = options;
+  }
+  await db.insertOne("items", obj);
   return res.send("کالا ثبت شد");
 });
+
 router.put("/:id", adminAuth, validate(itemSchema), async (req, res) => {
   let { category, options, subCategory } = req.body;
   const query = { _id: new ObjectId(req.params.id) };
@@ -105,12 +136,13 @@ router.put("/:id", adminAuth, validate(itemSchema), async (req, res) => {
   const foundSubCategory = await checkCategory(subCategory);
   if (!foundCategory || !foundSubCategory)
     return res.status(404).send("کتگوری پیدا نشد");
-  if (foundCategory._id !== foundSubCategory.parentId)
+  if (foundCategory._id.toString() !== foundSubCategory.parentId.toString())
     return res.status(400).send("کتگوری و ساب کتگوری مطابقت ندارد");
   obj = {
     ...req.body,
     category: new ObjectId(category),
     subCategory: new ObjectId(subCategory),
+    views: 0,
   };
   if (options && options.length > 0) {
     options = options.map((opt) => new ObjectId(opt));
@@ -119,6 +151,7 @@ router.put("/:id", adminAuth, validate(itemSchema), async (req, res) => {
   await db.updateOne("items", query, obj);
   return res.send("کالا ادیت شد");
 });
+
 router.delete("/:id", adminAuth, validate(itemSchema), async (req, res) => {
   //if it has any order you should not be able to delete it
   // if (!ObjectId.isValid(req.params.id))
@@ -129,5 +162,18 @@ router.delete("/:id", adminAuth, validate(itemSchema), async (req, res) => {
   // await db.deleteOne("items", query);
   // return res.send("کالا حذف شد");
 });
+// router.post(
+//   "/add-view",
+//   validate({ _id: Joi.string().required() }),
+//   async (req, res) => {
+//     const { _id } = req.body;
 
+//     await db.updateOne(
+//       "items",
+//       { _id: new ObjectId(_id) },
+//       { $inc: { views: 1 } }
+//     );
+//     return res.send("view added");
+//   }
+// );
 module.exports = router;

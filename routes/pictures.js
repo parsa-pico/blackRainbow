@@ -28,11 +28,12 @@ const upload = multer({ storage, limits: { fileSize: maxSize } });
 
 router.get("/:picturePath", async (req, res) => {
   const filePath = getPicturePath(req.params.picturePath);
-  fs.access(filePath, fs.constants.F_OK, (err) => {
-    console.log("err", err);
-    if (!err) return res.sendFile(filePath);
-    else return res.sendFile(getPicturePath("placeholder.png"));
-  });
+  // fs.access(filePath, fs.constants.F_OK, (err) => {
+  //   console.log("err", err);
+  //   if (!err) return res.sendFile(filePath);
+  //   else return res.sendFile(getPicturePath("placeholder.png"));
+  // });
+  res.sendFile(filePath);
 });
 
 router.post("/", adminAuth, upload.single("picture"), async (req, res) => {

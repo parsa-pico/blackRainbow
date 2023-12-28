@@ -9,6 +9,7 @@ module.exports = function (req, res, next) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_PRIVATE_KEY);
     if (!decoded.isAdmin) return res.status(403).send("نبود دسترسی ادمین ");
+    req.user = decoded;
     next();
   } catch (error) {
     console.log(error);
