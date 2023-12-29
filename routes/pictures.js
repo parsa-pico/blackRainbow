@@ -24,7 +24,16 @@ const storage = multer.diskStorage({
   },
 });
 const maxSize = 1024 * 512; // in Bytes
-const upload = multer({ storage, limits: { fileSize: maxSize } });
+const upload = multer({
+  storage,
+  limits: { fileSize: maxSize },
+  // fileFilter: (req, file, cb) => {
+  //   if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+  //     return cb(new Error("valid formats:jpg,jpeg,png"));
+  //   }
+  //   cb(undefined, true);
+  // },
+});
 
 router.get("/:picturePath", async (req, res) => {
   const filePath = getPicturePath(req.params.picturePath);

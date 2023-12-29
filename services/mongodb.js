@@ -29,9 +29,9 @@ module.exports = class DB {
   static getCollection(db = dataBase, collection) {
     return this.client.db(db).collection(collection);
   }
-  static async countCollection(mycollection, db = dataBase) {
+  static async countCollection(mycollection, query, db = dataBase) {
     const collection = this.getCollection(db, mycollection);
-    return await collection.countDocuments();
+    return await collection.countDocuments(query);
   }
   static async insertOne(mycollection, data, db = dataBase, opt = {}) {
     const collection = this.getCollection(db, mycollection);

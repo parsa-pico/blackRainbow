@@ -10,7 +10,16 @@ const anonymousAuth = require("../middlewares/anonymousAuth");
 const validate = require("../middlewares/validate");
 
 router.use(anonymousAuth);
+router.post("/count-cart", async (req, res) => {
+  console.log("hi");
+  const { user, sessionId } = req;
 
+  const query = {};
+  if (user) query.userId = new ObjectId(req.user._id);
+  else query.sessionId = sessionId;
+  const result = await db.countCollection("carts", query);
+  return res.send({ count: result });
+});
 router.get("/", async (req, res) => {
   const { user, sessionId } = req;
 
@@ -33,6 +42,16 @@ router.get("/", async (req, res) => {
         },
       },
       { $unwind: "$cartItem" },
+      {
+        $project: {
+          productName: "$cartItem.productName",
+          picture: { $arrayElemAt: ["$cartItem.pictures", 0] },
+          quantity: 1,
+          price: "$cartItem.price",
+          options: 1,
+          itemId: 1,
+        },
+      },
     ])
     .toArray();
   return res.send(cart);
@@ -65,7 +84,7 @@ router.post("/new/:itemId", validate(cartSchema), async (req, res) => {
     obj.sessionId = sessionId;
     query.sessionId = obj.sessionId;
   }
-
+  console.log(query);
   const item = await db.findOne("items", {
     _id: obj.itemId,
   });
@@ -101,6 +120,7 @@ router.post("/new/:itemId", validate(cartSchema), async (req, res) => {
     const result = await db.updateOne("carts", { _id: cartItem._id }, obj);
     return res.send({ obj, msg: "کالا ادیت شد" });
   } catch (error) {
+    console.log(error);
     if (error.code === 11000) return res.status(400).send("کالا در سبد میباشد");
   }
 });

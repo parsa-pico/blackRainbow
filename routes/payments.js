@@ -8,6 +8,7 @@ const customerAuth = require("../middlewares/customerAuth");
 const validate = require("../middlewares/validate");
 const Order = require("../entities/Order");
 const IdPay = require("../entities/IdPay");
+const PaymentMethod = require("../enums/paymentMethod");
 OrderStatus = require("../enums/orderStatus");
 PaymentStatus = require("../enums/paymentStatus");
 
@@ -21,6 +22,8 @@ router.post(
     if (!orderId) return res.status(400).send("آیدی خرید وارد نشده");
     const order = await db.findOne("orders", { _id: orderId });
     if (!order) return res.status(404).send("سفارش وجود ندارد");
+    if (order.paymentMethod === PaymentMethod.cardPayment)
+      return res.status(403).send({ msg: "نوع پرداخت کارت به کارت  میباشد" });
     if (order.remaningPrice < 1000)
       return res.status(409).send("پرداخت انجام شده است");
     if (order.userId != req.user._id)
@@ -77,7 +80,11 @@ router.post(
     await db.updateOne(
       "orders",
       { _id: payment.orderId },
-      { status: OrderStatus.successful, remaningPrice: 0 }
+      {
+        status: OrderStatus.successful,
+        remaningPrice: 0,
+        updatedAt: new Date(),
+      }
     );
     await db.updateMany(
       "orderItems",

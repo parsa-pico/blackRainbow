@@ -7,6 +7,7 @@ const { ObjectId } = require("mongodb");
 const customerAuth = require("../middlewares/customerAuth");
 const validate = require("../middlewares/validate");
 const Order = require("../entities/Order");
+const PaymentMethod = require("../enums/paymentMethod");
 OrderStatus = require("../enums/orderStatus");
 
 router.get("/:id", customerAuth, async (req, res) => {
@@ -30,6 +31,12 @@ router.post(
     // await session.abortTransaction();
     // await session.commitTransaction();
     // session.endSession();
+    if (
+      req.body.paymentMethod === PaymentMethod.cardPayment &&
+      !req.body.paymentPicture
+    )
+      return res.status(400).send({ msg: "عکس فیش الزامی است" });
+
     const order = new Order(req.user._id);
     let cart = await order.getCart();
     for (let item of cart) {

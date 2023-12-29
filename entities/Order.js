@@ -1,5 +1,6 @@
 const db = require("../services/mongodb");
 const { ObjectId } = require("mongodb");
+const configs = require("../configs.json");
 class Order {
   constructor(userId) {
     this.userId = userId;
@@ -71,6 +72,7 @@ class Order {
       ])
       .toArray();
     totalPrice = parseInt(totalPrice[0].totalPrice);
+    totalPrice += configs.postPrice;
     return totalPrice;
   }
 }
