@@ -8,6 +8,7 @@ const customerAuth = require("../middlewares/customerAuth");
 const validate = require("../middlewares/validate");
 const Order = require("../entities/Order");
 OrderStatus = require("../enums/orderStatus");
+
 router.get("/:id", customerAuth, async (req, res) => {
   if (!ObjectId.isValid(req.params.id))
     return res.status(400).send("ایدی خرید معتبر نیست");
@@ -51,12 +52,12 @@ router.post(
     if (schedule) obj["schedule"] = new Date(schedule);
     const { insertedId } = await db.insertOne("orders", obj);
     cart = cart.map((c) => {
-      console.log(c);
       const obj = {
         quantity: c.quantity,
         itemId: new ObjectId(c.itemId),
         orderId: new ObjectId(insertedId),
         price: c.price,
+        isPayed: false,
       };
       if (c.options) obj.options = c.options;
       return obj;
@@ -67,7 +68,7 @@ router.post(
         update: { $inc: { stock: -quantity } },
       },
     }));
-    await db.getCollection(undefined, "items").bulkWrite(bulkOperations);
+    await db.getDbColletion("items").bulkWrite(bulkOperations);
     await db.insertMany("orderItems", cart);
     //TODO:remove items from cart
     return res.send({ insertedId, msg: "خرید ثبت شد" });

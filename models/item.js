@@ -20,6 +20,6 @@ module.exports = {
   }).messages({ "any.custom": "فرمت انتخاب ها صحیح نیست" }),
 
   tags: Joi.array().required(),
-  pictures: Joi.array().required(),
+  pictures: Joi.array().min(1).required(),
   customersPictures: Joi.array(),
 };

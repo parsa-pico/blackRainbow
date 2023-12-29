@@ -9,7 +9,7 @@ const validate = require("../middlewares/validate");
 const Order = require("../entities/Order");
 const IdPay = require("../entities/IdPay");
 OrderStatus = require("../enums/orderStatus");
-PaymentStatus = require("../enums/paymetnStatus");
+PaymentStatus = require("../enums/paymentStatus");
 
 router.post(
   "/make-payment",

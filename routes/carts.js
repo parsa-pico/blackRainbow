@@ -105,33 +105,6 @@ router.post("/new/:itemId", validate(cartSchema), async (req, res) => {
   }
 });
 
-router.post("/anonymous-to-customer", customerAuth, async (req, res) => {
-  // TODO: transactionnnnn
-  const { sessionId } = req.body;
-  if (!sessionId)
-    return res.status(400).send("sesseion id required for transfer");
-  const { user } = req;
-  const userId = new ObjectId(user._id);
-  let currentItemIds = await (
-    await db
-      .getDbColletion("carts")
-      .find({
-        userId,
-      })
-      .project({ itemId: 1, _id: 0 })
-  ).toArray();
-
-  currentItemIds = currentItemIds.map((obj) => obj.itemId);
-  const result = await db.getDbColletion("carts").updateMany(
-    { sessionId, itemId: { $nin: currentItemIds } },
-    {
-      $set: { userId },
-      $unset: { sessionId: "" },
-    }
-  );
-  await db.deleteMany("carts", { sessionId });
-  return res.send(result);
-});
 // router.put("/:cartItemId", validate(cartSchema), async (req, res) => {
 //   const { user, sessionId } = req;
 //   if (!ObjectId.isValid(req.params.cartItemId))

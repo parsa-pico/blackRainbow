@@ -85,7 +85,7 @@ router.post("/get-by-keyword", getUser, async (req, res) => {
   const projcetObj = { productName: 1, price: 1, pictures: 1, stock: 1 };
   let searchObj = {};
   let result;
-  if (!req.user) searchObj.private = null;
+  if (!req.user) searchObj.private = false;
   if (search) {
     searchObj.$text = { $search: search };
     result = await (

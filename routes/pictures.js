@@ -43,6 +43,19 @@ router.post("/", adminAuth, upload.single("picture"), async (req, res) => {
     filePath: req.file.path,
   });
 });
+
+router.post(
+  "/payment-picutre",
+  customerAuth,
+  upload.single("picture"),
+  async (req, res) => {
+    return res.send({
+      fileName: req.file.filename,
+      msg: "عکس اپلود شد",
+      filePath: req.file.path,
+    });
+  }
+);
 router.delete("/:picturePath", adminAuth, async (req, res) => {
   const { picturePath } = req.params;
   const filePath = getPicturePath(picturePath);

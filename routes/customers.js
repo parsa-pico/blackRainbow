@@ -7,19 +7,20 @@ const { default: axios } = require("axios");
 const bcrypt = require("bcrypt");
 const customerAuth = require("../middlewares/customerAuth");
 const validate = require("../middlewares/validate");
-const { generateRandomCode, codeExpired } = require("../utils/common.js");
+const {
+  generateRandomCode,
+  codeExpired,
+  cookieOptions,
+} = require("../utils/common.js");
 const loginSchema = require("../models/login");
 const customerSchema = require("../models/customer");
 const phoneNumberSchema = require("../models/phoneNumer");
 const loginSmsSchema = require("../models/login-sms");
 const config = require("../configs.json");
 const { v4: uuidv4 } = require("uuid");
-const cookieOptions = {
-  maxAge: 1000 * 60 * 60 * 24 * 30, //max age:30 days
-  httpOnly: true,
-  secure: true,
-  // sameSite: "none", //TODO: CHANGE THESE OPTIONS
-};
+const { transfer } = require("../controllers/transferCart");
+const anonymousAuth = require("../middlewares/anonymousAuth");
+
 // router.post("/login", validate(loginSchema), async (req, res) => {
 //   const { phoneNumber, password } = req.body;
 //   const user = await db.findOne("customers", { phoneNumber });
@@ -100,36 +101,43 @@ router.post("/send-code", validate(phoneNumberSchema), async (req, res) => {
   console.log(result);
   return res.send({ msg: "کد ارسال شد", codeExpires: config.codeExpires });
 });
-router.post("/login-sms", validate(loginSmsSchema), async (req, res) => {
-  const { phoneNumber, code } = req.body;
-  const user = await db.findOne("customers", { phoneNumber });
-  if (!user) return res.status(404).send("کاربر یافت نشد");
-  const threshold = config.codeExpires; //minutes
-  const { isExpired, remaning } = codeExpired(user.codeTime, threshold);
-  if (isExpired) return res.status(403).send("کد منقضی شده است");
+router.post(
+  "/login-sms",
+  anonymousAuth,
+  validate(loginSmsSchema),
+  async (req, res, next) => {
+    const { phoneNumber, code } = req.body;
+    const user = await db.findOne("customers", { phoneNumber });
+    if (!user) return res.status(404).send("کاربر یافت نشد");
+    const threshold = config.codeExpires; //minutes
+    const { isExpired, remaning } = codeExpired(user.codeTime, threshold);
+    if (isExpired) return res.status(403).send("کد منقضی شده است");
 
-  const correctCode = user.code === code;
-  if (!correctCode) return res.status(400).send("کد اشتباه است");
-  const { firstName, lastName, _id, isAdmin } = user;
-  const userInfo = {
-    firstName,
-    lastName,
-    phoneNumber,
-    _id,
-    isAdmin: isAdmin || false,
-  };
-  const token = jwt.sign(userInfo, process.env.JWT_PRIVATE_KEY, {
-    expiresIn: "30d",
-  });
-  userInfo.exp = jwt.decode(token).exp * 1000; //convert it to millis
+    const correctCode = user.code === code;
+    if (!correctCode) return res.status(400).send("کد اشتباه است");
+    const { firstName, lastName, _id, isAdmin } = user;
+    const userInfo = {
+      firstName,
+      lastName,
+      phoneNumber,
+      _id,
+      isAdmin: isAdmin || false,
+    };
+    const token = jwt.sign(userInfo, process.env.JWT_PRIVATE_KEY, {
+      expiresIn: "30d",
+    });
+    userInfo.exp = jwt.decode(token).exp * 1000; //convert it to millis
 
-  res.cookie("token", token, cookieOptions);
-  res.clearCookie("sessionId");
-  return res.send({ msg: "ورود انجام شد", userInfo });
-});
+    req.user = userInfo;
+    req.token = token;
+    next();
+  },
+  transfer
+);
 router.post("/login-anonymous", async (req, res) => {
   const sessionId = uuidv4();
   res.cookie("sessionId", sessionId, { ...cookieOptions, httpOnly: false });
+  res.clearCookie("token");
   res.send({ msg: "session id sent" });
 });
 router.post("/logout", async (req, res) => {
