@@ -13,7 +13,13 @@ const customerSchema = require("../models/customer");
 const phoneNumberSchema = require("../models/phoneNumer");
 const loginSmsSchema = require("../models/login-sms");
 const config = require("../configs.json");
-
+const { v4: uuidv4 } = require("uuid");
+const cookieOptions = {
+  maxAge: 1000 * 60 * 60 * 24 * 30, //max age:30 days
+  httpOnly: true,
+  secure: true,
+  // sameSite: "none", //TODO: CHANGE THESE OPTIONS
+};
 // router.post("/login", validate(loginSchema), async (req, res) => {
 //   const { phoneNumber, password } = req.body;
 //   const user = await db.findOne("customers", { phoneNumber });
@@ -34,6 +40,7 @@ const config = require("../configs.json");
 //   );
 //   return res.send(token);
 // });
+
 router.post("/send-code", validate(phoneNumberSchema), async (req, res) => {
   const { phoneNumber } = req.body;
   const user = await db.findOne("customers", { phoneNumber });
@@ -116,16 +123,19 @@ router.post("/login-sms", validate(loginSmsSchema), async (req, res) => {
   });
   userInfo.exp = jwt.decode(token).exp * 1000; //convert it to millis
 
-  res.cookie("token", token, {
-    maxAge: 1000 * 60 * 60 * 24 * 30, //max age:30 days
-    httpOnly: true,
-    secure: true,
-    // sameSite: "none", //TODO: CHANGE THESE OPTIONS
-  });
-
+  res.cookie("token", token, cookieOptions);
+  res.clearCookie("sessionId");
   return res.send({ msg: "ورود انجام شد", userInfo });
 });
-
+router.post("/login-anonymous", async (req, res) => {
+  const sessionId = uuidv4();
+  res.cookie("sessionId", sessionId, { ...cookieOptions, httpOnly: false });
+  res.send({ msg: "session id sent" });
+});
+router.post("/logout", async (req, res) => {
+  res.clearCookie("token");
+  res.send({ msg: "خروج انجام شد" });
+});
 // router.post(
 //   "/sign-up-nopass",
 //   validate(phoneNumberSchema),

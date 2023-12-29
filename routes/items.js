@@ -103,6 +103,8 @@ router.post("/get-by-keyword", getUser, async (req, res) => {
   return res.send(result);
 });
 router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
+  // TODO: for post and put,set private field to be explict false or true
+  // also change get method from null to false
   let { category, subCategory, options } = req.body;
   const foundCategory = await checkCategory(category);
   const foundSubCategory = await checkCategory(subCategory);

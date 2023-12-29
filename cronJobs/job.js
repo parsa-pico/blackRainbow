@@ -8,3 +8,5 @@
 // }, interval);
 
 // set status of each payment to failed after 20 mins
+
+//delete cart items which has been there for 1 week and has session id
