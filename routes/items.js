@@ -11,6 +11,7 @@ const Joi = require("joi");
 
 router.get("/:id", getUser, async (req, res) => {
   const query = { _id: new ObjectId(req.params.id) };
+  if (!req.user) query.private = false;
   const item = await db
     .getCollection(undefined, "items")
     .aggregate([
@@ -67,11 +68,6 @@ router.get("/:id", getUser, async (req, res) => {
 
   if (!item) return res.status(404).send("محصول پیدا نشد");
 
-  // if (!req.user || !req.user.isAdmin)
-  //   db.updateOne("items", query, {
-  //     $inc: { views: 1 },
-  //   });
-
   return res.send(item);
 });
 async function checkCategory(category) {
@@ -81,13 +77,18 @@ async function checkCategory(category) {
   return foundCategory;
 }
 router.post("/get-by-keyword", getUser, async (req, res) => {
-  const { search } = req.body;
+  const { search, category, subCategory } = req.body;
+  console.log(req.body);
   const projcetObj = { productName: 1, price: 1, pictures: 1, stock: 1 };
   let searchObj = {};
   let result;
   if (!req.user) searchObj.private = false;
+  if (category) searchObj.category = new ObjectId(category);
+  if (subCategory) searchObj.subCategory = new ObjectId(subCategory);
+
   if (search) {
     searchObj.$text = { $search: search };
+
     result = await (
       await db
         .getDbColletion("items")
