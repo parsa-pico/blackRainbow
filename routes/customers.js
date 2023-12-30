@@ -20,6 +20,7 @@ const config = require("../configs.json");
 const { v4: uuidv4 } = require("uuid");
 const { transfer } = require("../controllers/transferCart");
 const anonymousAuth = require("../middlewares/anonymousAuth");
+const SMS = require("../services/sms");
 
 // router.post("/login", validate(loginSchema), async (req, res) => {
 //   const { phoneNumber, password } = req.body;
@@ -68,24 +69,7 @@ router.post("/send-code", validate(phoneNumberSchema), async (req, res) => {
   const sandBox = true;
   try {
     if (!sandBox) {
-      const { data } = await axios.post(
-        "https://api.sms.ir/v1/send/verify",
-        {
-          mobile: phoneNumber,
-          templateId: 100000,
-          parameters: [
-            {
-              name: "Code",
-              value: randomCode,
-            },
-          ],
-        },
-        {
-          headers: {
-            "x-api-key": process.env.SMS_KEY,
-          },
-        }
-      );
+      const data = await SMS.sendCode(phoneNumber, randomCode);
       console.log(data);
     }
   } catch (error) {

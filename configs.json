@@ -1,4 +1,6 @@
 {
   "codeExpires": 120,
-  "postPrice": 350000
+  "postPrice": 350000,
+  "adminFileLimit": 512,
+  "customerFileLimit": 1024
 }

@@ -7,6 +7,8 @@ module.exports = function (err, req, res, next) {
     return res.status(400).send("آیدی معتبر نیست");
   }
   if (err instanceof MulterError && err.code === "LIMIT_FILE_SIZE")
-    return res.status(400).send("حجم فایل ارسالی زیاد است");
+    return res
+      .status(400)
+      .send(`حجم فایل ارسالی بیش از ${req.maxSize} کیلوبایت است`);
   return res.status(500).send("خطای غیرمنتظره از سرور");
 };

@@ -8,10 +8,9 @@ const customerAuth = require("../middlewares/customerAuth");
 const getUser = require("../middlewares/getUser");
 const anonymousAuth = require("../middlewares/anonymousAuth");
 const validate = require("../middlewares/validate");
-
+const configs = require("../configs.json");
 router.use(anonymousAuth);
 router.post("/count-cart", async (req, res) => {
-  console.log("hi");
   const { user, sessionId } = req;
 
   const query = {};
@@ -20,6 +19,7 @@ router.post("/count-cart", async (req, res) => {
   const result = await db.countCollection("carts", query);
   return res.send({ count: result });
 });
+
 router.get("/", async (req, res) => {
   const { user, sessionId } = req;
 
@@ -54,7 +54,8 @@ router.get("/", async (req, res) => {
       },
     ])
     .toArray();
-  return res.send(cart);
+  const { postPrice } = configs;
+  return res.send({ cart, postPrice });
 });
 
 router.get("/:itemId", async (req, res) => {
@@ -84,7 +85,7 @@ router.post("/new/:itemId", validate(cartSchema), async (req, res) => {
     obj.sessionId = sessionId;
     query.sessionId = obj.sessionId;
   }
-  console.log(query);
+
   const item = await db.findOne("items", {
     _id: obj.itemId,
   });

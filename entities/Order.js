@@ -1,13 +1,13 @@
 const db = require("../services/mongodb");
 const { ObjectId } = require("mongodb");
-const configs = require("../configs.json");
+
 class Order {
   constructor(userId) {
     this.userId = userId;
   }
   async getCart() {
     const cart = await db
-      .getCollection(undefined, "carts")
+      .getDbColletion("carts")
       .aggregate([
         {
           $match: {
@@ -41,6 +41,74 @@ class Order {
       .toArray();
     return cart;
   }
+  async getOrder(orderId) {
+    const order = await db
+      .getDbColletion("orders")
+      .aggregate([
+        {
+          $match: {
+            _id: new ObjectId(orderId),
+          },
+        },
+        {
+          $lookup: {
+            from: "orderItems", // Target collection to join
+            localField: "_id", // Field from the 'orders' collection
+            foreignField: "orderId", // Field from the 'orderItems' collection
+            as: "orderItems", // Output field name
+          },
+        },
+        {
+          $unwind: "$orderItems", // Deconstruct the array created by $lookup
+        },
+        {
+          $lookup: {
+            from: "items", // Target collection to join
+            localField: "orderItems.itemId", // Field from the 'orderItems' collection
+            foreignField: "_id", // Field from the 'items' collection
+            as: "item", // Output field name
+          },
+        },
+        {
+          $unwind: "$item", // Deconstruct the array created by $lookup
+        },
+        {
+          $group: {
+            _id: "$_id", // Group by order ID
+            createdAt: { $first: "$createdAt" },
+            firstName: { $first: "$firstName" },
+            lastName: { $first: "$lastName" },
+            province: { $first: "$province" },
+            city: { $first: "$city" },
+            address: { $first: "$address" },
+            postalCode: { $first: "$postalCode" },
+            paymentMethod: { $first: "$paymentMethod" },
+            paymentPicture: { $first: "$paymentPicture" },
+            status: { $first: "$status" },
+            updatedAt: { $first: "$updatedAt" },
+            totalPrice: { $first: "$totalPrice" },
+            remaningPrice: { $first: "$remaningPrice" },
+            postPrice: { $first: "$postPrice" },
+            postTrackingCode: { $first: "$postTrackingCode" },
+            // Add more common fields here
+            items: {
+              $push: {
+                itemId: "$item._id",
+                productName: "$item.productName",
+                quantity: "$orderItems.quantity",
+                price: "$orderItems.price",
+                options: "$orderItems.options",
+                picture: { $first: "$item.pictures" },
+                // Add more item-specific fields here
+              },
+            },
+          },
+        },
+      ])
+      .toArray();
+
+    return order[0];
+  }
   async getTotalPrice() {
     let totalPrice = await db
       .getCollection(undefined, "carts")
@@ -72,7 +140,7 @@ class Order {
       ])
       .toArray();
     totalPrice = parseInt(totalPrice[0].totalPrice);
-    totalPrice += configs.postPrice;
+
     return totalPrice;
   }
 }

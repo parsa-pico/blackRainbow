@@ -48,6 +48,7 @@ function codeExpired(codeTime, thresholdSeconds) {
   const remaning = thresholdSeconds - diff;
   return { isExpired: diff > thresholdSeconds, remaning };
 }
+
 exports.codeExpired = codeExpired;
 exports.validate = validate;
 exports.validateDaysObject = validateDaysObject;

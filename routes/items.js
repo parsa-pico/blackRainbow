@@ -103,8 +103,6 @@ router.post("/get-by-keyword", getUser, async (req, res) => {
   return res.send(result);
 });
 router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
-  // TODO: for post and put,set private field to be explict false or true
-  // also change get method from null to false
   let { category, subCategory, options } = req.body;
   const foundCategory = await checkCategory(category);
   const foundSubCategory = await checkCategory(subCategory);
@@ -115,11 +113,12 @@ router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
     return res.status(400).send("کتگوری و ساب کتگوری مطابقت ندارد");
   obj = {
     ...req.body,
+    private: req.body.private || false,
     category: new ObjectId(category),
     subCategory: new ObjectId(subCategory),
     views: 0,
   };
-  console.log(options);
+
   if (options && options.length > 0) {
     options = options.map((opt) => new ObjectId(opt));
     obj.options = options;
@@ -142,6 +141,7 @@ router.put("/:id", adminAuth, validate(itemSchema), async (req, res) => {
     return res.status(400).send("کتگوری و ساب کتگوری مطابقت ندارد");
   obj = {
     ...req.body,
+    private: req.body.private || false,
     category: new ObjectId(category),
     subCategory: new ObjectId(subCategory),
     views: 0,
@@ -150,7 +150,8 @@ router.put("/:id", adminAuth, validate(itemSchema), async (req, res) => {
     options = options.map((opt) => new ObjectId(opt));
     obj.options = options;
   }
-  await db.updateOne("items", query, obj);
+  const result = await db.updateOne("items", query, obj);
+  console.log(result);
   return res.send("کالا ادیت شد");
 });
 

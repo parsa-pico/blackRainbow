@@ -8,16 +8,54 @@ const customerAuth = require("../middlewares/customerAuth");
 const validate = require("../middlewares/validate");
 const Order = require("../entities/Order");
 const PaymentMethod = require("../enums/paymentMethod");
-OrderStatus = require("../enums/orderStatus");
+const OrderStatus = require("../enums/orderStatus");
+const configs = require("../configs.json");
+const ordermanipulate = require("../models/ordermanipulate");
+const persianStatus = {
+  1: "در انتظار پرداخت",
+  2: "پرداخت شده",
+  3: "ارسال شده",
+  4: "پرداخت ناموفق",
+  5: "کنسل شده",
+  6: "پردازش شده",
+};
+router.get("/", customerAuth, async (req, res) => {
+  const query = { userId: new ObjectId(req.user._id) };
+  const orders = await db
+    .getDbColletion("orders")
+    .find(query)
+    .sort({ _id: -1 })
+    .project({ status: 1, createdAt: 1, totalPrice: 1 })
+    .toArray();
+
+  return res.send({ orders, OrderStatus: persianStatus });
+});
+
+router.post("/admin-get", adminAuth, async (req, res) => {
+  const { phoneNumber } = req.body;
+
+  const ordersQuery = {};
+  if (phoneNumber) {
+    const user = await db.findOne("customers", { phoneNumber });
+    if (!user) return res.status(404).send("کاربر یافت نشد");
+    ordersQuery.userId = user._id;
+  }
+  const orders = await db
+    .getDbColletion("orders")
+    .find(ordersQuery)
+    .sort({ _id: -1 })
+    .project({ status: 1, createdAt: 1, totalPrice: 1, paymentMethod: 1 })
+    .toArray();
+
+  return res.send({ orders, OrderStatus: persianStatus });
+});
 
 router.get("/:id", customerAuth, async (req, res) => {
-  if (!ObjectId.isValid(req.params.id))
-    return res.status(400).send("ایدی خرید معتبر نیست");
-  const query = { _id: new ObjectId(req.params.id) };
-  const order = await db.findOne("items", query);
-  if (!order) return res.status(404).send("خرید پیدا نشد");
+  const order = new Order();
+  const result = await order.getOrder(req.params.id);
+  if (!result) return res.status(404).send("خرید پیدا نشد");
 
-  return res.send(order);
+  return res.send({ result, OrderStatus: persianStatus });
 });
 
 router.post(
@@ -25,6 +63,8 @@ router.post(
   customerAuth,
   validate(orderSchema),
   async (req, res) => {
+    //TODO: when purchasd send an sms
+
     //TODO:replace this with transactions
     // const session = db.client.startSession();
     // session.startTransaction();
@@ -46,6 +86,7 @@ router.post(
 
     if (cart.length === 0) return res.status(400).send("سبد خرید شما خالی است");
     let totalPrice = await order.getTotalPrice();
+    totalPrice += configs.postPrice; //TODO:if  there is one order that has not been sent,do not add post price
     const { schedule } = req.body;
     const obj = {
       ...req.body,
@@ -55,6 +96,7 @@ router.post(
       updatedAt: new Date(),
       totalPrice,
       remaningPrice: totalPrice,
+      postPrice: configs.postPrice,
     };
     if (schedule) obj["schedule"] = new Date(schedule);
     const { insertedId } = await db.insertOne("orders", obj);
@@ -77,12 +119,24 @@ router.post(
     }));
     await db.getDbColletion("items").bulkWrite(bulkOperations);
     await db.insertMany("orderItems", cart);
-    //TODO:remove items from cart
+
+    await db.deleteMany("carts", { userId: new ObjectId(order.userId) });
     return res.send({ insertedId, msg: "خرید ثبت شد" });
   }
 );
 
-router.put("/:id", adminAuth, async (req, res) => {});
+router.put("/:id", adminAuth, validate(ordermanipulate), async (req, res) => {
+  const { status, postTrackingCode } = req.body;
+  const result = await db.updateOne(
+    "orders",
+    { _id: new ObjectId(req.params.id) },
+    { status, postTrackingCode, updatedAt: new Date() }
+  );
+  if (result.matchedCount === 0)
+    return res.status(404).send({ msg: "سفارش پیدا نشد" });
+
+  return res.send({ msg: "سفارش آپدیت شد" });
+});
 router.delete("/:id", adminAuth, async (req, res) => {});
 
 module.exports = router;

@@ -4,5 +4,7 @@ class OrderStatus {
   static sent = 3;
   static failed = 4;
   static cancelled = 5;
+  static processed = 6;
 }
+
 module.exports = OrderStatus;

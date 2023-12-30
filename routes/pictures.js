@@ -10,30 +10,28 @@ const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 const { getPicturePath } = require("../utils/common");
+const configs = require("../configs.json");
+const { upload_image } = require("../middlewares/upload");
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./pictures");
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(
-      null,
-      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
-    );
-  },
-});
-const maxSize = 1024 * 512; // in Bytes
-const upload = multer({
-  storage,
-  limits: { fileSize: maxSize },
-  // fileFilter: (req, file, cb) => {
-  //   if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-  //     return cb(new Error("valid formats:jpg,jpeg,png"));
-  //   }
-  //   cb(undefined, true);
-  // },
-});
+// const maxSize = 1024 * 512; // in Bytes
+// const upload = multer({
+//   storage,
+//   // limits: { fileSize: maxSize },
+//   fileFilter: (req, file, cb) => {
+//     let maxSize = 1024;
+//     maxSize *= req.user.isAdmin
+//       ? configs.adminFileLimit
+//       : configs.customerFileLimit;
+//     if (req.file.size > maxSize) {
+//       req.maxSize = maxSize / 1024;
+//       return cb(new multer.MulterError("LIMIT_FILE_SIZE"), false);
+//     }
+//     // if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+//     //   return cb(new Error("valid formats:jpg,jpeg,png"));
+//     // }
+//     return cb(undefined, true);
+//   },
+// });
 
 router.get("/:picturePath", async (req, res) => {
   const filePath = getPicturePath(req.params.picturePath);
@@ -45,7 +43,7 @@ router.get("/:picturePath", async (req, res) => {
   res.sendFile(filePath);
 });
 
-router.post("/", adminAuth, upload.single("picture"), async (req, res) => {
+router.post("/", adminAuth, upload_image, async (req, res) => {
   return res.send({
     fileName: req.file.filename,
     msg: "عکس اپلود شد",
@@ -56,7 +54,7 @@ router.post("/", adminAuth, upload.single("picture"), async (req, res) => {
 router.post(
   "/payment-picutre",
   customerAuth,
-  upload.single("picture"),
+  upload_image,
   async (req, res) => {
     return res.send({
       fileName: req.file.filename,

@@ -7,13 +7,45 @@ const { ObjectId } = require("mongodb");
 const validate = require("../middlewares/validate");
 const customerAuth = require("../middlewares/customerAuth");
 
-router.get("/", customerAuth, async (req, res) => {
+router.get("/", async (req, res) => {
   const categories = await (
-    await db.find("categories", { parentId })
+    await db.getDbColletion("categories").aggregate([
+      {
+        $graphLookup: {
+          from: "categories",
+          startWith: "$_id",
+          connectFromField: "_id",
+          connectToField: "parentId",
+          as: "subCategories",
+          maxDepth: 1,
+        },
+      },
+      {
+        $match: { subCategories: { $ne: [] } },
+      },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+
+          subCategories: {
+            $map: {
+              input: "$subCategories",
+              as: "subcategory",
+              in: {
+                _id: "$$subcategory._id",
+                title: "$$subcategory.title",
+              },
+            },
+          },
+        },
+      },
+    ])
   ).toArray();
 
   return res.send(categories);
 });
+
 router.post("/get-by-title", customerAuth, async (req, res) => {
   const { title } = req.body;
   const categories = await (
