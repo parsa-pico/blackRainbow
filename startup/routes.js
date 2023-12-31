@@ -9,6 +9,7 @@ const fs = require("fs").promises;
 const path = require("path");
 const cookieParser = require("cookie-parser");
 module.exports = async function (app) {
+  console.log(process.env.FRONT_BASE_URL);
   app.use(
     cors({
       credentials: true,
