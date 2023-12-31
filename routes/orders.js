@@ -11,6 +11,7 @@ const PaymentMethod = require("../enums/paymentMethod");
 const OrderStatus = require("../enums/orderStatus");
 const configs = require("../configs.json");
 const ordermanipulate = require("../models/ordermanipulate");
+const SMS = require("../services/sms");
 const persianStatus = {
   1: "در انتظار پرداخت",
   2: "پرداخت شده",
@@ -114,13 +115,13 @@ router.post(
     const bulkOperations = cart.map(({ itemId, quantity }) => ({
       updateOne: {
         filter: { _id: itemId },
-        update: { $inc: { stock: -quantity } },
+        update: { $inc: { stock: -quantity }, $inc: { sold: quantity } },
       },
     }));
     await db.getDbColletion("items").bulkWrite(bulkOperations);
     await db.insertMany("orderItems", cart);
-
     await db.deleteMany("carts", { userId: new ObjectId(order.userId) });
+    await SMS.notifyAdminNewPurchase();
     return res.send({ insertedId, msg: "خرید ثبت شد" });
   }
 );

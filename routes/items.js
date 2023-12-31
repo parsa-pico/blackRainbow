@@ -8,10 +8,14 @@ const { ObjectId } = require("mongodb");
 const validate = require("../middlewares/validate");
 const customerAuth = require("../middlewares/customerAuth");
 const Joi = require("joi");
+const ItemSort = require("../enums/itemSort");
 
 router.get("/:id", getUser, async (req, res) => {
   const query = { _id: new ObjectId(req.params.id) };
   if (!req.user) query.private = false;
+  let isAdmin = false;
+  if (req.user && req.user.isAdmin) isAdmin = true;
+
   const item = await db
     .getCollection(undefined, "items")
     .aggregate([
@@ -49,6 +53,7 @@ router.get("/:id", getUser, async (req, res) => {
           as: "optionsData",
         },
       },
+
       {
         $limit: 1, // Limit to one document
       },
@@ -60,10 +65,39 @@ router.get("/:id", getUser, async (req, res) => {
           subCategory: 0,
         },
       },
+
+      {
+        $project: {
+          sold: {
+            $cond: {
+              if: isAdmin,
+              then: "$sold",
+              else: "$$REMOVE",
+            },
+          },
+          views: {
+            $cond: {
+              if: isAdmin,
+              then: "$views",
+              else: "$$REMOVE",
+            },
+          },
+          categoryData: 1,
+          customersPictures: 1,
+          description: 1,
+          optionsData: 1,
+          pictures: 1,
+          price: 1,
+          productName: 1,
+          subCategoryData: 1,
+          tags: 1,
+          stock: 1,
+        },
+      },
     ])
     .toArray();
 
-  if (!req.user || !req.user.isAdmin)
+  if (!req.user || !isAdmin)
     await db.getDbColletion("items").updateOne(query, { $inc: { views: 1 } });
 
   if (!item) return res.status(404).send("محصول پیدا نشد");
@@ -77,31 +111,31 @@ async function checkCategory(category) {
   return foundCategory;
 }
 router.post("/get-by-keyword", getUser, async (req, res) => {
-  const { search, category, subCategory } = req.body;
-  console.log(req.body);
+  const { search, category, subCategory, sortIndex } = req.body;
+
   const projcetObj = { productName: 1, price: 1, pictures: 1, stock: 1 };
   let searchObj = {};
   let result;
   if (!req.user) searchObj.private = false;
   if (category) searchObj.category = new ObjectId(category);
   if (subCategory) searchObj.subCategory = new ObjectId(subCategory);
-
+  let options = {};
   if (search) {
     searchObj.$text = { $search: search };
-
-    result = await (
-      await db
-        .getDbColletion("items")
-        .find(searchObj, { score: { $meta: "textScore" } })
-        .sort({ score: { $meta: "textScore" } })
-        .project(projcetObj)
-    ).toArray();
-  } else {
-    result = await (
-      await db.getDbColletion("items").find(searchObj).project(projcetObj)
-    ).toArray();
+    options = { score: { $meta: "textScore" } };
   }
-  return res.send(result);
+  console.log("re,", searchObj, options);
+
+  const sortBy = ItemSort[sortIndex] || (search ? ItemSort[1] : ItemSort[2]);
+  result = await (
+    await db
+      .getDbColletion("items")
+      .find(searchObj, options)
+      .sort(sortBy)
+      .project(projcetObj)
+  ).toArray();
+
+  return res.send({ result, sortBy });
 });
 router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
   let { category, subCategory, options } = req.body;
@@ -114,6 +148,7 @@ router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
     return res.status(400).send("کتگوری و ساب کتگوری مطابقت ندارد");
   obj = {
     ...req.body,
+    sold: 0,
     private: req.body.private || false,
     category: new ObjectId(category),
     subCategory: new ObjectId(subCategory),
@@ -145,7 +180,6 @@ router.put("/:id", adminAuth, validate(itemSchema), async (req, res) => {
     private: req.body.private || false,
     category: new ObjectId(category),
     subCategory: new ObjectId(subCategory),
-    views: 0,
   };
   if (options && options.length > 0) {
     options = options.map((opt) => new ObjectId(opt));

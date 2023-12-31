@@ -7,6 +7,7 @@ module.exports = function () {
     "IS_HTTPS",
     "FRONT_BASE_URL",
     "ID_PAY_AUTH_KEY",
+    "ADMIN_PHONE_NUMBER",
   ];
   for (let input of env_inputs) {
     if (!process.env[input]) {

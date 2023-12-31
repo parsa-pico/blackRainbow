@@ -1,4 +1,5 @@
 const { default: axios } = require("axios");
+const { getDate } = require("../utils/common");
 
 class SMS {
   static async sendSms(mobile, templateId, parameters) {
@@ -23,6 +24,16 @@ class SMS {
       {
         name: "Code",
         value: code,
+      },
+    ]);
+    return data;
+  }
+  static async notifyAdminNewPurchase() {
+    const persianDate = getDate(new Date());
+    const data = await this.sendSms(process.env.ADMIN_PHONE_NUMBER, 392682, [
+      {
+        name: "DATE",
+        value: persianDate,
       },
     ]);
     return data;

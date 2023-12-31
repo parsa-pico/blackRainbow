@@ -48,13 +48,17 @@ function codeExpired(codeTime, thresholdSeconds) {
   const remaning = thresholdSeconds - diff;
   return { isExpired: diff > thresholdSeconds, remaning };
 }
-
+function getDate(dateValue) {
+  let date = new Date(dateValue);
+  date = date.toLocaleString("fa-IR").split(" ")[0].replace(/,/g, "").trim();
+  return date;
+}
 exports.codeExpired = codeExpired;
 exports.validate = validate;
 exports.validateDaysObject = validateDaysObject;
 exports.generateRandomCode = generateRandomCode;
 exports.getPicturePath = getPicturePath;
-
+exports.getDate = getDate;
 exports.cookieOptions = {
   maxAge: 1000 * 60 * 60 * 24 * 30, //max age:30 days
   httpOnly: true,

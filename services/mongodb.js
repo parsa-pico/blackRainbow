@@ -5,7 +5,7 @@ const dataBase = "blackRainbow";
 
 module.exports = class DB {
   static client;
-
+  static get = this.getDbColletion;
   static getClient() {
     if (!this.client) {
       this.client = new mongodb.MongoClient(mongodbEndpoint);
