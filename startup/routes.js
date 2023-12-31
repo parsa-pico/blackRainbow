@@ -9,8 +9,13 @@ const fs = require("fs").promises;
 const path = require("path");
 const cookieParser = require("cookie-parser");
 module.exports = async function (app) {
-  //TODO:
-  app.use(cors({ credentials: true, origin: true, withCredentials: true }));
+  app.use(
+    cors({
+      credentials: true,
+      origin: process.env.FRONT_BASE_URL,
+      withCredentials: true,
+    })
+  );
   const server = http.createServer(app);
   // const io = socketIo(server, { cors: { credentials: true } });
   // wsHandler(io);

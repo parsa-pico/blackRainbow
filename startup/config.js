@@ -9,6 +9,7 @@ module.exports = function () {
     "ADMIN_PHONE_NUMBER",
     "SECURE",
     "SAME_SITE",
+    "SEND_SMS",
   ];
   for (let input of env_inputs) {
     if (!process.env[input]) {

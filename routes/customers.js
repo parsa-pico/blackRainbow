@@ -21,6 +21,7 @@ const { v4: uuidv4 } = require("uuid");
 const { transfer } = require("../controllers/transferCart");
 const anonymousAuth = require("../middlewares/anonymousAuth");
 const SMS = require("../services/sms");
+// const countCart = require("../controllers/countCart");
 
 // router.post("/login", validate(loginSchema), async (req, res) => {
 //   const { phoneNumber, password } = req.body;
@@ -66,12 +67,10 @@ router.post("/send-code", validate(phoneNumberSchema), async (req, res) => {
       codeExpires: remaning,
     });
   const randomCode = generateRandomCode(4).toString();
-  const sandBox = true;
+
   try {
-    if (!sandBox) {
-      const data = await SMS.sendCode(phoneNumber, randomCode);
-      console.log(data);
-    }
+    const data = await SMS.sendCode(phoneNumber, randomCode);
+    console.log(data);
   } catch (error) {
     console.log(error);
     return res.status(499).send("سامانه پیامکی در دسترس نمیباشد");
@@ -116,6 +115,7 @@ router.post(
     req.token = token;
     next();
   },
+
   transfer
 );
 router.post("/login-anonymous", async (req, res) => {
