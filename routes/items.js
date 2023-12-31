@@ -8,7 +8,7 @@ const { ObjectId } = require("mongodb");
 const validate = require("../middlewares/validate");
 const customerAuth = require("../middlewares/customerAuth");
 const Joi = require("joi");
-const ItemSort = require("../enums/itemSort");
+const ItemSort = require("../enums/ItemSort");
 
 router.get("/:id", getUser, async (req, res) => {
   const query = { _id: new ObjectId(req.params.id) };
