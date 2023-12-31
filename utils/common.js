@@ -62,7 +62,7 @@ exports.getDate = getDate;
 exports.cookieOptions = {
   maxAge: 1000 * 60 * 60 * 24 * 30, //max age:30 days
   httpOnly: true,
-  secure: Boolean(process.env.SECURE),
+  secure: process.env.SECURE === "true",
   sameSite: process.env.SAME_SITE,
 };
 console.log(exports.cookieOptions);
