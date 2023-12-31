@@ -7,20 +7,42 @@ const { ObjectId } = require("mongodb");
 const validate = require("../middlewares/validate");
 const customerAuth = require("../middlewares/customerAuth");
 
-// router.get("/", customerAuth, async (req, res) => {
-//   const reuslt = await (
-//     await db
-//       .getDbColletion("likes")
-//       .find({ userId: new ObjectId(req.user._id) })
-//       .sort({ _id: 1 })
-//   ).toArray();
-//   return res.send(reuslt);
-// });
+router.get("/", customerAuth, async (req, res) => {
+  const userId = new ObjectId(req.user._id);
+
+  const result = await (
+    await db.get("likes").aggregate([
+      {
+        $match: {
+          userId,
+        },
+      },
+      {
+        $lookup: {
+          from: "items",
+          localField: "itemId",
+          foreignField: "_id",
+          as: "item",
+        },
+      },
+      {
+        $unwind: "$item", // unwind the array created by $lookup
+      },
+      {
+        $replaceRoot: { newRoot: "$item" },
+      },
+    ])
+  ).toArray();
+  console.log(result);
+  return res.send(result);
+});
 router.get("/:itemId", customerAuth, async (req, res) => {
   const itemId = new ObjectId(req.params.itemId);
   const userId = new ObjectId(req.user._id);
 
-  const result = (await db.get("likes").findOne({ itemId, userId })) || false;
+  const result = (await db.get("likes").findOne({ itemId, userId }))
+    ? true
+    : false;
 
   return res.send(result);
 });

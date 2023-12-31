@@ -124,7 +124,6 @@ router.post("/get-by-keyword", getUser, async (req, res) => {
     searchObj.$text = { $search: search };
     options = { score: { $meta: "textScore" } };
   }
-  console.log("re,", searchObj, options);
 
   const sortBy = ItemSort[sortIndex] || (search ? ItemSort[1] : ItemSort[2]);
   result = await (
