@@ -9,8 +9,8 @@ const fs = require("fs").promises;
 const path = require("path");
 const cookieParser = require("cookie-parser");
 const customers = require("../routes/customers");
-module.exports = async function (app) {
-  const server = http.createServer(app);
+module.exports = function (app) {
+  // const server = http.createServer(app);
   // app.use(async (req, res, next) => {
   //   console.log("hiii");
   //   res.set("Access-Control-Allow-Origin", process.env.FRONT_BASE_URL);
@@ -46,17 +46,27 @@ module.exports = async function (app) {
 
     optionsSuccessStatus: 200,
   };
-  console.log("cors-", cors);
-  console.log("cors", cors());
+  // console.log("cors-", cors);
+  // console.log("cors", cors());
   console.log("cookieParser-", cookieParser);
   console.log("cookieParser", cookieParser());
   console.log("corsOptions", corsOptions);
   // app.options("*", cors(corsOptions));
-  app.use((req, res, next) => {
-    console.log("before cors");
-    cors(corsOptions)(req, res, next);
-    console.log("after cors");
+  app.use(cors());
+  app.use(function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "https://blackrainbow.liara.run");
+    res.header("Access-Control-Allow-Credentials", true);
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept"
+    );
+    next();
   });
+  // app.use((req, res, next) => {
+  //   console.log("before cors");
+  //   cors(corsOptions)(req, res, next);
+  //   console.log("after cors");
+  // });
 
   // const io = socketIo(server, { cors: { credentials: true } });
   // wsHandler(io);
@@ -73,5 +83,5 @@ module.exports = async function (app) {
 
   app.use(error);
 
-  return server;
+  // return server;
 };
