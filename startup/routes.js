@@ -21,17 +21,25 @@ module.exports = async function (app) {
   //   res.set("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
   //   next();
   // });
-
+  const whitelist = [
+    "https://blackrainbow.liara.run",
+    "http://blackrainbow.liara.run",
+    "blackrainbow.liara.run",
+    "https://www.blackrainbow.liara.run",
+    "http://localhost:3001",
+  ];
   app.use(
     cors({
       credentials: true,
-      origin: [
-        "https://blackrainbow.liara.run",
-        "http://blackrainbow.liara.run",
-        "blackrainbow.liara.run",
-        "https://www.blackrainbow.liara.run",
-        "http://localhost:3001",
-      ],
+      origin: function (origin, callback) {
+        callback(null, true);
+        // console.log("origin", origin);
+        // if (whitelist.indexOf(origin) !== -1) {
+        //   callback(null, true);
+        // } else {
+        //   callback(new Error("Not allowed by CORS"));
+        // }
+      },
 
       withCredentials: true,
       optionsSuccessStatus: 200,
