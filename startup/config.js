@@ -4,10 +4,11 @@ module.exports = function () {
     "MONGO_URL",
     "BACK_END_URL",
     "SMS_KEY",
-    "IS_HTTPS",
     "FRONT_BASE_URL",
     "ID_PAY_AUTH_KEY",
     "ADMIN_PHONE_NUMBER",
+    "SECURE",
+    "SAME_SITE",
   ];
   for (let input of env_inputs) {
     if (!process.env[input]) {

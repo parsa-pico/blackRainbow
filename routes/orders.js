@@ -10,7 +10,7 @@ const Order = require("../entities/Order");
 const PaymentMethod = require("../enums/paymentMethod");
 const OrderStatus = require("../enums/orderStatus");
 const configs = require("../configs.json");
-const ordermanipulate = require("../models/ordermanipulate");
+const ordermanipulate = require("../models/orderManipulate");
 const SMS = require("../services/sms");
 const persianStatus = {
   1: "در انتظار پرداخت",
