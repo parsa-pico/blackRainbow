@@ -9,26 +9,38 @@ const fs = require("fs").promises;
 const path = require("path");
 const cookieParser = require("cookie-parser");
 module.exports = async function (app) {
+  // app.use(async (req, res, next) => {
+  //   console.log("hiii");
+  //   res.set("Access-Control-Allow-Origin", process.env.FRONT_BASE_URL);
+  //   res.set("Access-Control-Allow-Credentials", true);
+  //   res.set("Vary", "Origin");
+  //   res.set(
+  //     "Access-Control-Allow-Headers",
+  //     "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers"
+  //   );
+  //   res.set("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
+  //   next();
+  // });
+
   app.use(
     cors({
       credentials: true,
-      // origin: [
-      //   "https://blackrainbow.liara.run",
-      //   "https://www.blackrainbow.liara.run",
-      //   "http://localhost:3001",
-      // ],
+      origin: [
+        "https://blackrainbow.liara.run",
+        "http://blackrainbow.liara.run",
+        "blackrainbow.liara.run",
+        "https://www.blackrainbow.liara.run",
+        "http://localhost:3001",
+      ],
 
       withCredentials: true,
-      // optionsSuccessStatus: 200,
+      optionsSuccessStatus: 200,
     })
   );
   const server = http.createServer(app);
   // const io = socketIo(server, { cors: { credentials: true } });
   // wsHandler(io);
-  app.use(async (req, res, next) => {
-    res.header("Access-Control-Allow-Origin", process.env.FRONT_BASE_URL);
-    next();
-  });
+
   app.use(cookieParser());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
