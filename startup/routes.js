@@ -9,12 +9,16 @@ const fs = require("fs").promises;
 const path = require("path");
 const cookieParser = require("cookie-parser");
 module.exports = async function (app) {
-  console.log(process.env.FRONT_BASE_URL);
   app.use(
     cors({
       credentials: true,
-      origin: process.env.FRONT_BASE_URL,
+      origin: [
+        "https://blackrainbow.liara.run",
+        "https://www.blackrainbow.liara.run",
+        "http://localhost:3001",
+      ],
       withCredentials: true,
+      // optionsSuccessStatus: 200,
     })
   );
   const server = http.createServer(app);
