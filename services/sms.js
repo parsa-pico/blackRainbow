@@ -3,7 +3,7 @@ const { getDate } = require("../utils/common");
 
 class SMS {
   static async sendSms(mobile, templateId, parameters) {
-    if (process.env.SEND_SMS) {
+    if (process.env.SEND_SMS === "true") {
       const { data } = await axios.post(
         "https://api.sms.ir/v1/send/verify",
         {

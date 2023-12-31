@@ -8,7 +8,9 @@ const http = require("http");
 const fs = require("fs").promises;
 const path = require("path");
 const cookieParser = require("cookie-parser");
+const customers = require("../routes/customers");
 module.exports = async function (app) {
+  const server = http.createServer(app);
   // app.use(async (req, res, next) => {
   //   console.log("hiii");
   //   res.set("Access-Control-Allow-Origin", process.env.FRONT_BASE_URL);
@@ -55,19 +57,19 @@ module.exports = async function (app) {
     cors(corsOptions)(req, res, next);
     console.log("after cors");
   });
-  const server = http.createServer(app);
+
   // const io = socketIo(server, { cors: { credentials: true } });
   // wsHandler(io);
 
   app.use(cookieParser());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-
-  const routes_strings = await fs.readdir(
-    path.resolve(__dirname, "..", "routes")
-  );
-  for (let route of routes_strings)
-    app.use(`/${route.split(".")[0]}`, require(`../routes/${route}`));
+  app.use("/customers", customers);
+  // const routes_strings = await fs.readdir(
+  //   path.resolve(__dirname, "..", "routes")
+  // );
+  // for (let route of routes_strings)
+  //   app.use(`/${route.split(".")[0]}`, require(`../routes/${route}`));
 
   app.use(error);
 
