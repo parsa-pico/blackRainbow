@@ -120,12 +120,16 @@ router.post(
 );
 router.post("/login-anonymous", async (req, res) => {
   const sessionId = uuidv4();
-  res.cookie("sessionId", sessionId, { ...cookieOptions, httpOnly: false });
-  res.clearCookie("token");
+  console.log({ ...cookieOptions, httpOnly: false });
+  res.cookie("sessionId", sessionId, {
+    ...cookieOptions,
+    httpOnly: false,
+  });
+  res.clearCookie("token", cookieOptions);
   res.send({ msg: "session id sent" });
 });
 router.post("/logout", async (req, res) => {
-  res.clearCookie("token");
+  res.clearCookie("token", cookieOptions);
   res.send({ msg: "خروج انجام شد" });
 });
 // router.post(

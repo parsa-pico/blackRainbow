@@ -28,23 +28,24 @@ module.exports = async function (app) {
     "https://www.blackrainbow.liara.run",
     "http://localhost:3001",
   ];
-  app.use(
-    cors({
-      credentials: true,
-      origin: function (origin, callback) {
-        callback(null, true);
-        // console.log("origin", origin);
-        // if (whitelist.indexOf(origin) !== -1) {
-        //   callback(null, true);
-        // } else {
-        //   callback(new Error("Not allowed by CORS"));
-        // }
-      },
+  const corsOptions = {
+    credentials: true,
+    origin: function (origin, callback) {
+      console.log("callback", callback);
+      console.log("origin", origin);
+      callback(null, true);
+      // console.log("origin", origin);
+      // if (whitelist.indexOf(origin) !== -1) {
+      //   callback(null, true);
+      // } else {
+      //   callback(new Error("Not allowed by CORS"));
+      // }
+    },
 
-      withCredentials: true,
-      optionsSuccessStatus: 200,
-    })
-  );
+    optionsSuccessStatus: 200,
+  };
+  app.options("*", cors(corsOptions));
+  app.use(cors(corsOptions));
   const server = http.createServer(app);
   // const io = socketIo(server, { cors: { credentials: true } });
   // wsHandler(io);

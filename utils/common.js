@@ -62,6 +62,6 @@ exports.getDate = getDate;
 exports.cookieOptions = {
   maxAge: 1000 * 60 * 60 * 24 * 30, //max age:30 days
   httpOnly: true,
-  secure: process.env.SECURE,
+  secure: Boolean(process.env.SECURE),
   sameSite: process.env.SAME_SITE,
 };

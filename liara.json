@@ -1,0 +1,8 @@
+{
+  "disks": [
+    {
+      "name": "pictures",
+      "mountTo": "pictures"
+    }
+  ]
+}
