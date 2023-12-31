@@ -12,11 +12,12 @@ module.exports = async function (app) {
   app.use(
     cors({
       credentials: true,
-      origin: [
-        "https://blackrainbow.liara.run",
-        "https://www.blackrainbow.liara.run",
-        "http://localhost:3001",
-      ],
+      // origin: [
+      //   "https://blackrainbow.liara.run",
+      //   "https://www.blackrainbow.liara.run",
+      //   "http://localhost:3001",
+      // ],
+
       withCredentials: true,
       // optionsSuccessStatus: 200,
     })
@@ -24,6 +25,10 @@ module.exports = async function (app) {
   const server = http.createServer(app);
   // const io = socketIo(server, { cors: { credentials: true } });
   // wsHandler(io);
+  app.use(async (req, res, next) => {
+    res.header("Access-Control-Allow-Origin", process.env.FRONT_BASE_URL);
+    next();
+  });
   app.use(cookieParser());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
