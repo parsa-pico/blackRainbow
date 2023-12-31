@@ -44,6 +44,11 @@ module.exports = async function (app) {
 
     optionsSuccessStatus: 200,
   };
+  console.log("cors-", cors);
+  console.log("cors", cors());
+  console.log("cookieParser-", cookieParser);
+  console.log("cookieParser", cookieParser());
+  console.log("corsOptions", corsOptions);
   app.options("*", cors(corsOptions));
   app.use(cors(corsOptions));
   const server = http.createServer(app);

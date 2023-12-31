@@ -65,3 +65,4 @@ exports.cookieOptions = {
   secure: Boolean(process.env.SECURE),
   sameSite: process.env.SAME_SITE,
 };
+console.log(exports.cookieOptions);
