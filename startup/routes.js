@@ -52,9 +52,7 @@ module.exports = function (app) {
   console.log("cookieParser", cookieParser());
   console.log("corsOptions", corsOptions);
   // app.options("*", cors(corsOptions));
-  app.use(
-    cors({ origin: "https://blackrainbow.liara.run", credentials: true })
-  );
+  app.use(cors({ origin: "https://eng.iran.liara.run", credentials: true }));
   // app.use(function (req, res, next) {
   //   res.header("Access-Control-Allow-Origin", "https://blackrainbow.liara.run");
   //   res.header("Access-Control-Allow-Credentials", true);
