@@ -90,6 +90,7 @@ class Order {
             remaningPrice: { $first: "$remaningPrice" },
             postPrice: { $first: "$postPrice" },
             postTrackingCode: { $first: "$postTrackingCode" },
+            description: { $first: "$description" },
             // Add more common fields here
             items: {
               $push: {
