@@ -9,7 +9,7 @@ const fs = require("fs").promises;
 const path = require("path");
 const cookieParser = require("cookie-parser");
 const customers = require("../routes/customers");
-module.exports = function (app) {
+module.exports = async function (app) {
   // const server = http.createServer(app);
   // app.use(async (req, res, next) => {
   //   console.log("hiii");
@@ -52,9 +52,7 @@ module.exports = function (app) {
   // console.log("cookieParser", cookieParser());
   // console.log("corsOptions", corsOptions);
   // app.options("*", cors(corsOptions));
-  app.use(
-    cors({ origin: "https://blackrainbow.liara.run", credentials: true })
-  );
+  app.use(cors({ origin: process.env.FRONT_BASE_URL, credentials: true }));
   // app.use(function (req, res, next) {
   //   res.header("Access-Control-Allow-Origin", "https://blackrainbow.liara.run");
   //   res.header("Access-Control-Allow-Credentials", true);
@@ -76,12 +74,12 @@ module.exports = function (app) {
   app.use(cookieParser());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use("/customers", customers);
-  // const routes_strings = await fs.readdir(
-  //   path.resolve(__dirname, "..", "routes")
-  // );
-  // for (let route of routes_strings)
-  //   app.use(`/${route.split(".")[0]}`, require(`../routes/${route}`));
+
+  const routes_strings = await fs.readdir(
+    path.resolve(__dirname, "..", "routes")
+  );
+  for (let route of routes_strings)
+    app.use(`/${route.split(".")[0]}`, require(`../routes/${route}`));
 
   app.use(error);
 

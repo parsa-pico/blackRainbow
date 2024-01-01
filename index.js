@@ -7,7 +7,7 @@ async function run() {
   dbService.getClient().connect();
   const app = require("express")();
   // server = await require("./startup/routes")(app);
-  require("./startup/routes")(app);
+  await require("./startup/routes")(app);
   const port = process.env.PORT || 3000;
   app.listen(port, () => console.log("listening on port " + port));
 }
