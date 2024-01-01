@@ -53,7 +53,7 @@ module.exports = function (app) {
   // console.log("corsOptions", corsOptions);
   // app.options("*", cors(corsOptions));
   app.use(
-    cors({ origin: "https://blackrainbow.liara.run/", credentials: true })
+    cors({ origin: "https://blackrainbow.liara.run", credentials: true })
   );
   // app.use(function (req, res, next) {
   //   res.header("Access-Control-Allow-Origin", "https://blackrainbow.liara.run");
