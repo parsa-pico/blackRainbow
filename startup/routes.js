@@ -7,7 +7,7 @@ const https = require("https");
 const http = require("http");
 const fs = require("fs").promises;
 const path = require("path");
-const cookieParser = require("cookie-parser");
+// const cookieParser = require("cookie-parser");
 const customers = require("../routes/customers");
 module.exports = function (app) {
   // const server = http.createServer(app);
@@ -52,7 +52,9 @@ module.exports = function (app) {
   // console.log("cookieParser", cookieParser());
   // console.log("corsOptions", corsOptions);
   // app.options("*", cors(corsOptions));
-  app.use(cors({ origin: "https://eng.iran.liara.run", credentials: true }));
+  app.use(
+    cors({ origin: "https://blackrainbow.liara.run/", credentials: true })
+  );
   // app.use(function (req, res, next) {
   //   res.header("Access-Control-Allow-Origin", "https://blackrainbow.liara.run");
   //   res.header("Access-Control-Allow-Credentials", true);
