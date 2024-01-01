@@ -7,7 +7,7 @@ const https = require("https");
 const http = require("http");
 const fs = require("fs").promises;
 const path = require("path");
-// const cookieParser = require("cookie-parser");
+const cookieParser = require("cookie-parser");
 const customers = require("../routes/customers");
 module.exports = function (app) {
   // const server = http.createServer(app);
@@ -73,7 +73,7 @@ module.exports = function (app) {
   // const io = socketIo(server, { cors: { credentials: true } });
   // wsHandler(io);
 
-  // app.use(cookieParser());
+  app.use(cookieParser());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use("/customers", customers);
