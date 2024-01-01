@@ -52,16 +52,18 @@ module.exports = function (app) {
   console.log("cookieParser", cookieParser());
   console.log("corsOptions", corsOptions);
   // app.options("*", cors(corsOptions));
-  app.use(cors());
-  app.use(function (req, res, next) {
-    res.header("Access-Control-Allow-Origin", "https://blackrainbow.liara.run");
-    res.header("Access-Control-Allow-Credentials", true);
-    res.header(
-      "Access-Control-Allow-Headers",
-      "Origin, X-Requested-With, Content-Type, Accept"
-    );
-    next();
-  });
+  app.use(
+    cors({ origin: "https://blackrainbow.liara.run", credentials: true })
+  );
+  // app.use(function (req, res, next) {
+  //   res.header("Access-Control-Allow-Origin", "https://blackrainbow.liara.run");
+  //   res.header("Access-Control-Allow-Credentials", true);
+  //   res.header(
+  //     "Access-Control-Allow-Headers",
+  //     "Origin, X-Requested-With, Content-Type, Accept"
+  //   );
+  //   next();
+  // });
   // app.use((req, res, next) => {
   //   console.log("before cors");
   //   cors(corsOptions)(req, res, next);
