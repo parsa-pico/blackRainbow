@@ -92,6 +92,7 @@ router.get("/:id", getUser, async (req, res) => {
           subCategoryData: 1,
           tags: 1,
           stock: 1,
+          brand: 1,
         },
       },
     ])
