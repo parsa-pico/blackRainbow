@@ -23,34 +23,34 @@ module.exports = function (app) {
   //   res.set("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
   //   next();
   // });
-  const whitelist = [
-    "https://blackrainbow.liara.run",
-    "http://blackrainbow.liara.run",
-    "blackrainbow.liara.run",
-    "https://www.blackrainbow.liara.run",
-    "http://localhost:3001",
-  ];
-  const corsOptions = {
-    credentials: true,
-    origin: function (origin, callback) {
-      console.log("callback", callback);
-      console.log("origin", origin);
-      callback(null, true);
-      // console.log("origin", origin);
-      // if (whitelist.indexOf(origin) !== -1) {
-      //   callback(null, true);
-      // } else {
-      //   callback(new Error("Not allowed by CORS"));
-      // }
-    },
+  // const whitelist = [
+  //   "https://blackrainbow.liara.run",
+  //   "http://blackrainbow.liara.run",
+  //   "blackrainbow.liara.run",
+  //   "https://www.blackrainbow.liara.run",
+  //   "http://localhost:3001",
+  // ];
+  // const corsOptions = {
+  //   credentials: true,
+  //   origin: function (origin, callback) {
+  //     console.log("callback", callback);
+  //     console.log("origin", origin);
+  //     callback(null, true);
+  //     // console.log("origin", origin);
+  //     // if (whitelist.indexOf(origin) !== -1) {
+  //     //   callback(null, true);
+  //     // } else {
+  //     //   callback(new Error("Not allowed by CORS"));
+  //     // }
+  //   },
 
-    optionsSuccessStatus: 200,
-  };
+  //   optionsSuccessStatus: 200,
+  // };
   // console.log("cors-", cors);
   // console.log("cors", cors());
-  console.log("cookieParser-", cookieParser);
-  console.log("cookieParser", cookieParser());
-  console.log("corsOptions", corsOptions);
+  // console.log("cookieParser-", cookieParser);
+  // console.log("cookieParser", cookieParser());
+  // console.log("corsOptions", corsOptions);
   // app.options("*", cors(corsOptions));
   app.use(cors({ origin: "https://eng.iran.liara.run", credentials: true }));
   // app.use(function (req, res, next) {
@@ -71,7 +71,7 @@ module.exports = function (app) {
   // const io = socketIo(server, { cors: { credentials: true } });
   // wsHandler(io);
 
-  app.use(cookieParser());
+  // app.use(cookieParser());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use("/customers", customers);

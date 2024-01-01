@@ -121,11 +121,11 @@ router.post(
 router.post("/login-anonymous", async (req, res) => {
   const sessionId = uuidv4();
   console.log({ ...cookieOptions, httpOnly: false });
-  res.cookie("sessionId", sessionId, {
-    ...cookieOptions,
-    httpOnly: false,
-  });
-  res.clearCookie("token", cookieOptions);
+  // res.cookie("sessionId", sessionId, {
+  //   ...cookieOptions,
+  //   httpOnly: false,
+  // });
+  // res.clearCookie("token", cookieOptions);
   res.send({ msg: "session id sent" });
 });
 router.post("/logout", async (req, res) => {
