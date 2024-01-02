@@ -1,7 +1,6 @@
 const path = require("path");
 const multer = require("multer");
 const configs = require("../configs.json");
-const { log } = require("console");
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "./pictures");
@@ -14,13 +13,7 @@ const storage = multer.diskStorage({
     );
   },
 });
-filename = function (req, file, cb) {
-  const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-  cb(
-    null,
-    file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
-  );
-};
+
 upload_image = function (req, res, next) {
   let maxSize = 1024;
   maxSize *= req.user.isAdmin
@@ -28,10 +21,10 @@ upload_image = function (req, res, next) {
     : configs.customerFileLimit;
   req.maxSize = maxSize / 1024;
   const fileSize = maxSize;
-  log(fileSize);
+
   const upload = multer({
     storage,
-    filename,
+
     limits: {
       fileSize,
     },

@@ -13,26 +13,6 @@ const { getPicturePath } = require("../utils/common");
 const configs = require("../configs.json");
 const { upload_image } = require("../middlewares/upload");
 
-// const maxSize = 1024 * 512; // in Bytes
-// const upload = multer({
-//   storage,
-//   // limits: { fileSize: maxSize },
-//   fileFilter: (req, file, cb) => {
-//     let maxSize = 1024;
-//     maxSize *= req.user.isAdmin
-//       ? configs.adminFileLimit
-//       : configs.customerFileLimit;
-//     if (req.file.size > maxSize) {
-//       req.maxSize = maxSize / 1024;
-//       return cb(new multer.MulterError("LIMIT_FILE_SIZE"), false);
-//     }
-//     // if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-//     //   return cb(new Error("valid formats:jpg,jpeg,png"));
-//     // }
-//     return cb(undefined, true);
-//   },
-// });
-
 router.get("/:picturePath", async (req, res) => {
   const filePath = getPicturePath(req.params.picturePath);
   // fs.access(filePath, fs.constants.F_OK, (err) => {
@@ -55,6 +35,38 @@ router.post(
   "/payment-picutre",
   customerAuth,
   upload_image,
+  async (req, res) => {
+    return res.send({
+      fileName: req.file.filename,
+      msg: "عکس اپلود شد",
+      filePath: req.file.path,
+    });
+  }
+);
+const bgStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "./pictures");
+  },
+  filename: function (req, file, cb) {
+    cb(null, "bg.jpg");
+  },
+});
+const bgMulter = multer({
+  storage: bgStorage,
+  limits: { fileSize: 1024 * 700 },
+  fileFilter: (req, file, cb) => {
+    console.log(file.mimetype);
+    if (file.mimetype === "image/jpg" || file.mimetype === "image/jpeg") {
+      cb(null, true);
+    } else {
+      cb(new Error("پسوند عکس باید jpg باشد", 400), false);
+    }
+  },
+});
+router.post(
+  "/background",
+  adminAuth,
+  bgMulter.single("picture"),
   async (req, res) => {
     return res.send({
       fileName: req.file.filename,
