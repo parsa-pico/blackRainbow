@@ -15,10 +15,10 @@ const SMS = require("../services/sms");
 const persianStatus = {
   1: "در انتظار پرداخت",
   2: "پرداخت شده",
+  6: "پردازش شده",
   3: "ارسال شده",
   4: "پرداخت ناموفق",
   5: "کنسل شده",
-  6: "پردازش شده",
 };
 router.get("/", customerAuth, async (req, res) => {
   const query = { userId: new ObjectId(req.user._id) };
