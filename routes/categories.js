@@ -11,6 +11,9 @@ router.get("/", async (req, res) => {
   const categories = await (
     await db.getDbColletion("categories").aggregate([
       {
+        $match: { parentId: { $exists: false } },
+      },
+      {
         $graphLookup: {
           from: "categories",
           startWith: "$_id",
@@ -20,9 +23,7 @@ router.get("/", async (req, res) => {
           maxDepth: 1,
         },
       },
-      {
-        $match: { subCategories: { $ne: [] } },
-      },
+
       {
         $project: {
           _id: 1,
