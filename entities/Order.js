@@ -87,10 +87,11 @@ class Order {
             status: { $first: "$status" },
             updatedAt: { $first: "$updatedAt" },
             totalPrice: { $first: "$totalPrice" },
-            remaningPrice: { $first: "$remaningPrice" },
+            // remaningPrice: { $first: "$remaningPrice" },
             postPrice: { $first: "$postPrice" },
             postTrackingCode: { $first: "$postTrackingCode" },
             description: { $first: "$description" },
+            schedule: { $first: "$schedule" },
             // Add more common fields here
             items: {
               $push: {
@@ -143,6 +144,14 @@ class Order {
     totalPrice = parseInt(totalPrice[0].totalPrice);
 
     return totalPrice;
+  }
+  static async getScheduledOrder(userId) {
+    return await db.findOne("orders", {
+      schedule: { $exists: true, $gt: new Date() },
+      status: { $in: [1, 2] },
+      userId: new ObjectId(userId),
+      postPrice: { $ne: 0 },
+    });
   }
 }
 module.exports = Order;

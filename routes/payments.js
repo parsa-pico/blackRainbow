@@ -24,8 +24,12 @@ router.post(
     if (!order) return res.status(404).send("سفارش وجود ندارد");
     if (order.paymentMethod === PaymentMethod.cardPayment)
       return res.status(403).send({ msg: "نوع پرداخت کارت به کارت  میباشد" });
-    if (order.remaningPrice < 1000)
+
+    if (order.status in [2, 3, 6])
       return res.status(409).send("پرداخت انجام شده است");
+    else if (order.status === 5)
+      return res.status(400).send("سفارش کنسل شده است");
+
     if (order.userId != req.user._id)
       return res.status(403).send("سفارش با توکن کاربر مغایرت دارد");
     const amount = order.remaningPrice;
@@ -82,15 +86,15 @@ router.post(
       { _id: payment.orderId },
       {
         status: OrderStatus.successful,
-        remaningPrice: 0,
+        // remaningPrice: 0,
         updatedAt: new Date(),
       }
     );
-    await db.updateMany(
-      "orderItems",
-      { orderId: payment.orderId },
-      { isPayed: true }
-    );
+    // await db.updateMany(
+    //   "orderItems",
+    //   { orderId: payment.orderId },
+    //   { isPayed: true }
+    // );
     return res.send({ msg: "پرداخت با موفقیت تایید شد" });
   }
 );

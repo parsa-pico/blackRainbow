@@ -12,6 +12,7 @@ const OrderStatus = require("../enums/orderStatus");
 const configs = require("../configs.json");
 const ordermanipulate = require("../models/orderManipulate");
 const SMS = require("../services/sms");
+const { setDateTimeToZero } = require("../utils/common");
 const persianStatus = {
   1: "در انتظار پرداخت",
   2: "پرداخت شده",
@@ -72,6 +73,7 @@ router.post(
     // await session.abortTransaction();
     // await session.commitTransaction();
     // session.endSession();
+    const { schedule } = req.body;
     if (
       req.body.paymentMethod === PaymentMethod.cardPayment &&
       !req.body.paymentPicture
@@ -87,8 +89,17 @@ router.post(
 
     if (cart.length === 0) return res.status(400).send("سبد خرید شما خالی است");
     let totalPrice = await order.getTotalPrice();
-    totalPrice += configs.postPrice; //TODO:if  there is one order that has not been sent,do not add post price
-    const { schedule } = req.body;
+
+    const scheduledOrder = await Order.getScheduledOrder(req.user._id);
+    if (scheduledOrder && req.body.schedule) {
+      return res
+        .status(400)
+        .send({ msg: "شما یک سفارش به تاخیر انداخته دارید" });
+    }
+    const postPrice = scheduledOrder ? 0 : configs.postPrice;
+
+    totalPrice += postPrice;
+
     const obj = {
       ...req.body,
       userId: new ObjectId(req.user._id),
@@ -96,10 +107,13 @@ router.post(
       status: OrderStatus.pending,
       updatedAt: new Date(),
       totalPrice,
-      remaningPrice: totalPrice,
-      postPrice: configs.postPrice,
+      // remaningPrice: totalPrice,
+      postPrice,
     };
-    if (schedule) obj["schedule"] = new Date(schedule);
+    if (schedule) obj.schedule = new Date(schedule);
+    if (scheduledOrder) obj.schedule = scheduledOrder.schedule;
+    if (obj.schedule) obj.schedule = setDateTimeToZero(obj.schedule);
+
     const { insertedId } = await db.insertOne("orders", obj);
     cart = cart.map((c) => {
       const obj = {
@@ -107,7 +121,7 @@ router.post(
         itemId: new ObjectId(c.itemId),
         orderId: new ObjectId(insertedId),
         price: c.price,
-        isPayed: false,
+        // isPayed: false,
       };
       if (c.options) obj.options = c.options;
       return obj;
@@ -128,10 +142,12 @@ router.post(
 
 router.put("/:id", adminAuth, validate(ordermanipulate), async (req, res) => {
   const { status, postTrackingCode } = req.body;
+  const obj = { status, postTrackingCode, updatedAt: new Date() };
+
   const result = await db.updateOne(
     "orders",
     { _id: new ObjectId(req.params.id) },
-    { status, postTrackingCode, updatedAt: new Date() }
+    obj
   );
   if (result.matchedCount === 0)
     return res.status(404).send({ msg: "سفارش پیدا نشد" });

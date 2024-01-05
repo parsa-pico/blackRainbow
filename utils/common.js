@@ -53,6 +53,11 @@ function getDate(dateValue) {
   date = date.toLocaleString("fa-IR").split(" ")[0].replace(/,/g, "").trim();
   return date;
 }
+function setDateTimeToZero(dateObj) {
+  const utcDate = new Date(dateObj.toUTCString());
+  utcDate.setUTCHours(0, 0, 0, 0);
+  return utcDate;
+}
 exports.codeExpired = codeExpired;
 exports.validate = validate;
 exports.validateDaysObject = validateDaysObject;
@@ -65,4 +70,4 @@ exports.cookieOptions = {
   secure: process.env.SECURE === "true",
   sameSite: process.env.SAME_SITE,
 };
-console.log(exports.cookieOptions);
+exports.setDateTimeToZero = setDateTimeToZero;

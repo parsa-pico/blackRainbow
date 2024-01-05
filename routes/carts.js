@@ -9,6 +9,7 @@ const getUser = require("../middlewares/getUser");
 const anonymousAuth = require("../middlewares/anonymousAuth");
 const validate = require("../middlewares/validate");
 const configs = require("../configs.json");
+const Order = require("../entities/Order");
 router.use(anonymousAuth);
 router.post("/count-cart", async (req, res) => {
   const { user, sessionId } = req;
@@ -54,7 +55,13 @@ router.get("/", async (req, res) => {
       },
     ])
     .toArray();
-  const { postPrice } = configs;
+  let postPrice = configs.postPrice;
+  if (user) {
+    const scheduledOrder = await Order.getScheduledOrder(user._id);
+
+    if (scheduledOrder) postPrice = 0;
+  }
+
   return res.send({ cart, postPrice });
 });
 
