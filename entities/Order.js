@@ -148,7 +148,7 @@ class Order {
   static async getScheduledOrder(userId) {
     return await db.findOne("orders", {
       schedule: { $exists: true, $gt: new Date() },
-      status: { $in: [1, 2] },
+      status: 2,
       userId: new ObjectId(userId),
       postPrice: { $ne: 0 },
     });
