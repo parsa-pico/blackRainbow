@@ -9,13 +9,13 @@ const validate = require("../middlewares/validate");
 const customerAuth = require("../middlewares/customerAuth");
 const Joi = require("joi");
 const ItemSort = require("../enums/ItemSort");
-
+const configs = require("../configs.json");
 router.get("/:id", getUser, async (req, res) => {
   const query = { _id: new ObjectId(req.params.id) };
   if (!req.user) query.private = false;
   let isAdmin = false;
   if (req.user && req.user.isAdmin) isAdmin = true;
-
+  if (!isAdmin) query.enabled = true;
   const item = await db
     .getCollection(undefined, "items")
     .aggregate([
@@ -93,6 +93,7 @@ router.get("/:id", getUser, async (req, res) => {
           tags: 1,
           stock: 1,
           brand: 1,
+          enabled: 1,
         },
       },
     ])
@@ -113,11 +114,18 @@ async function checkCategory(category) {
 }
 router.post("/get-by-keyword", getUser, async (req, res) => {
   const { search, category, subCategory, sortIndex } = req.body;
+  let { page } = req.body;
+  if (!page) page = 1;
+  page = Math.max(1, page);
 
   const projcetObj = { productName: 1, price: 1, pictures: 1, stock: 1 };
   let searchObj = {};
   let result;
+  let isAdmin = false;
+  if (req.user && req.user.isAdmin) isAdmin = true;
+
   if (!req.user) searchObj.private = false;
+  if (!isAdmin) searchObj.enabled = true;
   if (category) searchObj.category = new ObjectId(category);
   if (subCategory) searchObj.subCategory = new ObjectId(subCategory);
   let options = {};
@@ -127,15 +135,65 @@ router.post("/get-by-keyword", getUser, async (req, res) => {
   }
 
   const sortBy = ItemSort[sortIndex] || (search ? ItemSort[1] : ItemSort[2]);
-  result = await (
-    await db
-      .getDbColletion("items")
-      .find(searchObj, options)
-      .sort(sortBy)
-      .project(projcetObj)
-  ).toArray();
+  // result = await (
+  //   await db
+  //     .getDbColletion("items")
+  //     .find(searchObj, options)
+  //     .sort(sortBy)
+  //     .project(projcetObj)
+  // ).toArray();
+  console.log(sortBy);
+  const firstProject = { ...projcetObj, sold: 1, views: 1, _id: 1 };
+  if (search) {
+    firstProject.score = { $meta: "textScore" };
+  }
+  const cursor = db.get("items").aggregate([
+    {
+      $match: searchObj,
+    },
+    {
+      $project: firstProject,
+    },
+    {
+      $sort: sortBy,
+    },
+    { $project: projcetObj },
+    {
+      $facet: {
+        documents: [
+          {
+            $skip: (page - 1) * configs.itemsPageLimit,
+          },
+          {
+            $limit: configs.itemsPageLimit,
+          },
+        ],
+        count: [
+          {
+            $count: "count",
+          },
+        ],
+      },
+    },
+    {
+      $project: {
+        documents: 1,
+        count: {
+          $arrayElemAt: ["$count.count", 0],
+        },
+      },
+    },
+  ]);
+  result = (await cursor.toArray())[0];
+  const count = result.count || 0;
+  const totalPages = Math.ceil(count / configs.itemsPageLimit);
 
-  return res.send({ result, sortBy });
+  return res.send({
+    result: result.documents,
+    count,
+    totalPages,
+    sortBy,
+  });
 });
 router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
   let { category, subCategory, options } = req.body;

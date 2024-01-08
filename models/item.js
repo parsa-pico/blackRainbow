@@ -22,4 +22,5 @@ module.exports = {
   tags: Joi.array().required(),
   pictures: Joi.array().min(1).required(),
   customersPictures: Joi.array(),
+  enabled: Joi.boolean().required(),
 };
