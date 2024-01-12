@@ -47,31 +47,31 @@ router.get("/", async (req, res) => {
   return res.send(categories);
 });
 
-router.post("/get-by-title", customerAuth, async (req, res) => {
-  const { title } = req.body;
-  const categories = await (
-    await db
-      .getCollection(undefined, "categories")
-      .find({
-        parentId: null,
-        title: { $regex: new RegExp(title) },
-      })
-      .limit(10)
-  ).toArray();
+// router.post("/get-by-title", customerAuth, async (req, res) => {
+//   const { title } = req.body;
+//   const categories = await (
+//     await db
+//       .getCollection(undefined, "categories")
+//       .find({
+//         parentId: null,
+//         title: { $regex: new RegExp(title) },
+//       })
+//       .limit(10)
+//   ).toArray();
 
-  return res.send(categories);
-});
-router.post("/get-sub", customerAuth, async (req, res) => {
-  let { parentId } = req.body;
-  parentId = new ObjectId(parentId);
-  const categories = await (
-    await db.getDbColletion("categories").find({
-      parentId,
-    })
-  ).toArray();
+//   return res.send(categories);
+// });
+// router.post("/get-sub", customerAuth, async (req, res) => {
+//   let { parentId } = req.body;
+//   parentId = new ObjectId(parentId);
+//   const categories = await (
+//     await db.getDbColletion("categories").find({
+//       parentId,
+//     })
+//   ).toArray();
 
-  return res.send(categories);
-});
+//   return res.send(categories);
+// });
 
 router.post("/", adminAuth, async (req, res) => {
   const { title, parentId } = req.body;
@@ -97,7 +97,7 @@ router.post("/", adminAuth, async (req, res) => {
 });
 router.put("/:categoryId", adminAuth, async (req, res) => {
   const categoryId = req.params.categoryId;
-  const { title, parentId } = req.body;
+  const { title } = req.body;
   if (!title) {
     return res.status(400).send("Title is required");
   }
@@ -109,24 +109,29 @@ router.put("/:categoryId", adminAuth, async (req, res) => {
     return res.status(404).send("  کتگوری پیدا نشد");
   }
 
-  category.title = title;
-
-  if (parentId) {
-    const parent = await db.findOne("categories", {
-      _id: new ObjectId(parentId),
-    });
-    if (!parent) {
-      return res.status(404).send("Parent category not found");
-    }
-    category.parentId = new ObjectId(parentId);
-  } else {
-    // If parentId is not provided, remove the parentId field
-    delete category.parentId;
-  }
-
-  // Save the updated category
-  await db.updateOne("categories", { _id: new ObjectId(categoryId) }, category);
+  await db.updateOne(
+    "categories",
+    { _id: new ObjectId(categoryId) },
+    { title }
+  );
 
   return res.send({ msg: "کتگوری اپدیت شد  " });
+});
+router.delete("/:categoryId", adminAuth, async (req, res) => {
+  const categoryId = new ObjectId(req.params.categoryId);
+  const query = { _id: categoryId };
+  const category = await db.findOne("categories", query);
+
+  if (!category) {
+    return res.status(404).send("  کتگوری پیدا نشد");
+  }
+
+  const item = await db.findOne("items", {
+    $or: [{ category: categoryId }, { subCategory: categoryId }],
+  });
+  if (item)
+    return res.status(403).send({ msg: "این دسته بندی دارای محصول میباشد" });
+  await db.deleteOne("categories", query);
+  return res.send({ msg: "کتگوری حذف شد  " });
 });
 module.exports = router;
