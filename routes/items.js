@@ -135,14 +135,6 @@ router.post("/get-by-keyword", getUser, async (req, res) => {
   }
 
   const sortBy = ItemSort[sortIndex] || (search ? ItemSort[1] : ItemSort[2]);
-  // result = await (
-  //   await db
-  //     .getDbColletion("items")
-  //     .find(searchObj, options)
-  //     .sort(sortBy)
-  //     .project(projcetObj)
-  // ).toArray();
-  console.log(sortBy);
   const firstProject = { ...projcetObj, sold: 1, views: 1, _id: 1 };
   if (search) {
     firstProject.score = { $meta: "textScore" };
