@@ -94,6 +94,7 @@ router.get("/:id", getUser, async (req, res) => {
           stock: 1,
           brand: 1,
           enabled: 1,
+          private: 1,
         },
       },
     ])
