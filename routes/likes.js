@@ -31,6 +31,7 @@ router.get("/", customerAuth, async (req, res) => {
       {
         $replaceRoot: { newRoot: "$item" },
       },
+      { $project: { pictures: 1, price: 1, productName: 1 } },
     ])
   ).toArray();
   console.log(result);

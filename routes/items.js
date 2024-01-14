@@ -12,10 +12,13 @@ const ItemSort = require("../enums/ItemSort");
 const configs = require("../configs.json");
 router.get("/:id", getUser, async (req, res) => {
   const query = { _id: new ObjectId(req.params.id) };
+  let userId = "";
   if (!req.user) query.private = false;
+  else userId = new ObjectId(req.user._id);
   let isAdmin = false;
   if (req.user && req.user.isAdmin) isAdmin = true;
   if (!isAdmin) query.enabled = true;
+
   const item = await db
     .getCollection(undefined, "items")
     .aggregate([
@@ -95,6 +98,26 @@ router.get("/:id", getUser, async (req, res) => {
           brand: 1,
           enabled: 1,
           private: 1,
+        },
+      },
+      {
+        $lookup: {
+          from: "likes",
+          localField: "_id",
+          foreignField: "itemId",
+          as: "likesData",
+        },
+      },
+      {
+        $addFields: {
+          liked: {
+            $in: [userId, "$likesData.userId"],
+          },
+        },
+      },
+      {
+        $project: {
+          likesData: 0,
         },
       },
     ])
