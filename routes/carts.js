@@ -13,7 +13,7 @@ const Order = require("../entities/Order");
 router.use(anonymousAuth);
 router.post("/count-cart", async (req, res) => {
   const { user, sessionId } = req;
-
+  if (!user && !sessionId) return res.send({ count: 0 });
   const query = {};
   if (user) query.userId = new ObjectId(req.user._id);
   else query.sessionId = sessionId;
