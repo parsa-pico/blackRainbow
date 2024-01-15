@@ -86,11 +86,13 @@ router.post("/send-code", validate(phoneNumberSchema), async (req, res) => {
 });
 router.post(
   "/login-sms",
-  anonymousAuth,
+  anonymousAuth(),
   validate(loginSmsSchema),
   async (req, res, next) => {
     const { phoneNumber, code } = req.body;
+
     const user = await db.findOne("customers", { phoneNumber });
+
     if (!user) return res.status(404).send("کاربر یافت نشد");
     const threshold = config.codeExpires; //minutes
     const { isExpired, remaning } = codeExpired(user.codeTime, threshold);

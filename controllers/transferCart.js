@@ -9,6 +9,7 @@ const transfer = async (req, res) => {
     return res.status(400).send("sesseion id required for transfer");
 
   const userId = new ObjectId(user._id);
+
   let currentItemIds = await (
     await db
       .getDbColletion("carts")
@@ -27,10 +28,12 @@ const transfer = async (req, res) => {
       $unset: { sessionId: "" },
     }
   );
+
   await db.deleteMany("carts", { sessionId });
 
   res.cookie("token", token, cookieOptions);
   res.clearCookie("sessionId");
+
   return res.send({ msg: "ورود انجام شد،ایتم ها منتقل شد", userInfo: user });
 };
 exports.transfer = transfer;

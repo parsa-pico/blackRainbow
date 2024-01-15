@@ -10,8 +10,8 @@ const anonymousAuth = require("../middlewares/anonymousAuth");
 const validate = require("../middlewares/validate");
 const configs = require("../configs.json");
 const Order = require("../entities/Order");
-router.use(anonymousAuth);
-router.post("/count-cart", async (req, res) => {
+
+router.post("/count-cart", anonymousAuth(false), async (req, res) => {
   const { user, sessionId } = req;
   if (!user && !sessionId) return res.send({ count: 0 });
   const query = {};
@@ -21,7 +21,7 @@ router.post("/count-cart", async (req, res) => {
   return res.send({ count: result });
 });
 
-router.get("/", async (req, res) => {
+router.get("/", anonymousAuth(), async (req, res) => {
   const { user, sessionId } = req;
 
   const query = {};
@@ -65,7 +65,7 @@ router.get("/", async (req, res) => {
   return res.send({ cart, postPrice });
 });
 
-router.get("/:itemId", async (req, res) => {
+router.get("/:itemId", anonymousAuth(), async (req, res) => {
   const { sessionId, user } = req;
   const query = { itemId: new ObjectId(req.params.itemId) };
   if (user) query.userId = new ObjectId(user._id);
@@ -76,62 +76,68 @@ router.get("/:itemId", async (req, res) => {
   return res.send(result);
 });
 
-router.post("/new/:itemId", validate(cartSchema), async (req, res) => {
-  const { sessionId, user } = req;
-  let { quantity, options } = req.body;
-  const obj = {
-    quantity: parseInt(quantity),
-    itemId: new ObjectId(req.params.itemId),
-  };
-  const query = { itemId: obj.itemId };
-  if (options) obj["options"] = options; //TODO:check if these options are valid
-  if (user) {
-    obj.userId = new ObjectId(user._id);
-    query.userId = obj.userId;
-  } else {
-    obj.sessionId = sessionId;
-    query.sessionId = obj.sessionId;
-  }
-
-  const item = await db.findOne("items", {
-    _id: obj.itemId,
-  });
-  if (!item) return res.status(404).send("کالا وجود ندارد");
-  if (quantity > item.stock)
-    return res.status(400).send("تعداد درخواستی بیشتر از موجودی انبار است");
-
-  try {
-    const cartItem = await db.findOne("carts", query);
-    if (!cartItem) {
-      obj.createdAt = new Date();
-
-      const result = await db.insertOne("carts", obj);
-      return res.send({
-        obj: { _id: result.insertedId, ...obj },
-        msg: "به سبد اضافه شد",
-      });
-    }
-    //update
-    if (
-      (user && cartItem.userId.toString() !== req.user._id) ||
-      (!user && sessionId !== cartItem.sessionId)
-    )
-      return res.status(403).send({ msg: "این کالا مربوط به شما نیست" });
-
-    if (quantity === 0) {
-      await db.deleteOne("carts", {
-        _id: cartItem._id,
-      });
-      return res.send("کالا حذف شد");
+router.post(
+  "/new/:itemId",
+  anonymousAuth(),
+  validate(cartSchema),
+  async (req, res) => {
+    const { sessionId, user } = req;
+    let { quantity, options } = req.body;
+    const obj = {
+      quantity: parseInt(quantity),
+      itemId: new ObjectId(req.params.itemId),
+    };
+    const query = { itemId: obj.itemId };
+    if (options) obj["options"] = options; //TODO:check if these options are valid
+    if (user) {
+      obj.userId = new ObjectId(user._id);
+      query.userId = obj.userId;
+    } else {
+      obj.sessionId = sessionId;
+      query.sessionId = obj.sessionId;
     }
 
-    const result = await db.updateOne("carts", { _id: cartItem._id }, obj);
-    return res.send({ obj, msg: "کالا ادیت شد" });
-  } catch (error) {
-    console.log(error);
-    if (error.code === 11000) return res.status(400).send("کالا در سبد میباشد");
+    const item = await db.findOne("items", {
+      _id: obj.itemId,
+    });
+    if (!item) return res.status(404).send("کالا وجود ندارد");
+    if (quantity > item.stock)
+      return res.status(400).send("تعداد درخواستی بیشتر از موجودی انبار است");
+
+    try {
+      const cartItem = await db.findOne("carts", query);
+      if (!cartItem) {
+        obj.createdAt = new Date();
+
+        const result = await db.insertOne("carts", obj);
+        return res.send({
+          obj: { _id: result.insertedId, ...obj },
+          msg: "به سبد اضافه شد",
+        });
+      }
+      //update
+      if (
+        (user && cartItem.userId.toString() !== req.user._id) ||
+        (!user && sessionId !== cartItem.sessionId)
+      )
+        return res.status(403).send({ msg: "این کالا مربوط به شما نیست" });
+
+      if (quantity === 0) {
+        await db.deleteOne("carts", {
+          _id: cartItem._id,
+        });
+        return res.send("کالا حذف شد");
+      }
+
+      const result = await db.updateOne("carts", { _id: cartItem._id }, obj);
+      return res.send({ obj, msg: "کالا ادیت شد" });
+    } catch (error) {
+      console.log(error);
+      if (error.code === 11000)
+        return res.status(400).send("کالا در سبد میباشد");
+    }
   }
-});
+);
 
 // router.put("/:cartItemId", validate(cartSchema), async (req, res) => {
 //   const { user, sessionId } = req;

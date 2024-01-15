@@ -27,7 +27,7 @@ router.get("/", customerAuth, async (req, res) => {
     .getDbColletion("orders")
     .find(query)
     .sort({ _id: -1 })
-    .project({ status: 1, createdAt: 1, totalPrice: 1 })
+    .project({ status: 1, createdAt: 1, totalPrice: 1, paymentMethod: 1 })
     .toArray();
 
   return res.send({ orders, OrderStatus: persianStatus });
