@@ -2,7 +2,7 @@ const { MulterError } = require("multer");
 
 const { BSONError } = require("mongodb").BSON;
 module.exports = function (err, req, res, next) {
-  console.log(err);
+  console.log("err:", err);
   if (err instanceof BSONError) {
     return res.status(400).send("آیدی معتبر نیست");
   }
