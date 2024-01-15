@@ -26,8 +26,9 @@ router.get("/", customerAuth, async (req, res) => {
         },
       },
       {
-        $unwind: "$item", // unwind the array created by $lookup
+        $unwind: "$item",
       },
+      { $sort: { _id: -1 } },
       {
         $replaceRoot: { newRoot: "$item" },
       },

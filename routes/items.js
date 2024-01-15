@@ -159,11 +159,17 @@ router.post("/get-by-keyword", getUser, async (req, res) => {
   }
 
   const sortBy = ItemSort[sortIndex] || (search ? ItemSort[1] : ItemSort[2]);
-  const firstProject = { ...projcetObj, sold: 1, views: 1, _id: 1 };
+  const firstProject = {
+    ...projcetObj,
+    sold: 1,
+    views: 1,
+    _id: 1,
+    liked: { $literal: false },
+  };
   if (search) {
     firstProject.score = { $meta: "textScore" };
   }
-  const cursor = db.get("items").aggregate([
+  let pipeLine = [
     {
       $match: searchObj,
     },
@@ -174,6 +180,48 @@ router.post("/get-by-keyword", getUser, async (req, res) => {
       $sort: sortBy,
     },
     { $project: projcetObj },
+  ];
+  if (req.user) {
+    const userId = new ObjectId(req.user._id);
+    pipeLine.push({
+      $lookup: {
+        from: "likes",
+        let: { itemId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$itemId", "$$itemId"] },
+                  { $eq: ["$userId", userId] },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              liked: { $literal: true },
+            },
+          },
+        ],
+        as: "likes",
+      },
+    });
+    pipeLine.push({
+      $addFields: {
+        liked: {
+          $cond: {
+            if: { $eq: [{ $size: "$likes" }, 0] },
+            then: false,
+            else: true,
+          },
+        },
+      },
+    });
+  }
+  pipeLine = [
+    ...pipeLine,
     {
       $facet: {
         documents: [
@@ -199,7 +247,8 @@ router.post("/get-by-keyword", getUser, async (req, res) => {
         },
       },
     },
-  ]);
+  ];
+  const cursor = db.get("items").aggregate(pipeLine);
   result = (await cursor.toArray())[0];
   const count = result.count || 0;
   const totalPages = Math.ceil(count / configs.itemsPageLimit);
