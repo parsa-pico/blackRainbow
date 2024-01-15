@@ -135,7 +135,7 @@ router.post(
     await db.getDbColletion("items").bulkWrite(bulkOperations);
     await db.insertMany("orderItems", cart);
     await db.deleteMany("carts", { userId: new ObjectId(order.userId) });
-    await SMS.notifyAdminNewPurchase();
+    // await SMS.notifyAdminNewPurchase();
     return res.send({ insertedId, msg: "خرید ثبت شد" });
   }
 );
