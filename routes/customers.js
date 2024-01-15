@@ -130,7 +130,7 @@ router.post("/login-anonymous", async (req, res) => {
     httpOnly: false,
   });
   res.clearCookie("token", cookieOptions);
-  res.send({ msg: "session id sent" });
+  res.send({ msg: "session id sent", sessionId });
 });
 router.post("/logout", async (req, res) => {
   res.clearCookie("token", cookieOptions);
