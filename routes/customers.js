@@ -119,8 +119,10 @@ router.post(
   transfer
 );
 router.post("/login-anonymous", async (req, res) => {
-  const sessionId = uuidv4();
-  console.log({ ...cookieOptions, httpOnly: false });
+  let sessionId;
+  if (req.cookies && req.cookies.sessionId) sessionId = req.cookies.sessionId;
+  else sessionId = uuidv4();
+
   res.cookie("sessionId", sessionId, {
     ...cookieOptions,
     httpOnly: false,
