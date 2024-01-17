@@ -3,5 +3,5 @@
   "postPrice": 450000,
   "adminFileLimit": 512,
   "customerFileLimit": 1024,
-  "itemsPageLimit": 10
+  "itemsPageLimit": 16
 }
