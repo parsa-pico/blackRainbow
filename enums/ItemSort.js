@@ -4,6 +4,8 @@ const ItemSort = {
   3: { _id: -1 }, // newset
   4: { _id: 1 }, //oldset
   5: { sold: -1 }, //most sold
+  6: { price: 1 }, //chipest
+  7: { price: -1 }, //most expensive
 };
 
 module.exports = ItemSort;
