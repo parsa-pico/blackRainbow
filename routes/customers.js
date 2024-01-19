@@ -6,6 +6,7 @@ const db = require("../services/mongodb");
 const { default: axios } = require("axios");
 const bcrypt = require("bcrypt");
 const customerAuth = require("../middlewares/customerAuth");
+const adminAuth = require("../middlewares/adminAuth");
 const validate = require("../middlewares/validate");
 const {
   generateRandomCode,
@@ -135,6 +136,36 @@ router.post("/login-anonymous", async (req, res) => {
 router.post("/logout", async (req, res) => {
   res.clearCookie("token", cookieOptions);
   res.send({ msg: "خروج انجام شد" });
+});
+router.get("/", adminAuth, async (req, res) => {
+  // const query = {};
+  // const phoneNumber = req.query.phoneNumber;
+  // if (phoneNumber) query.phoneNumber = phoneNumber;
+  // const result = await (await db.find("customers", query)).toArray();
+  const pipeline = [
+    {
+      $lookup: {
+        from: "orders",
+        localField: "_id",
+        foreignField: "userId",
+        as: "customer_orders",
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        phoneNumber: 1,
+        ordersCount: { $size: "$customer_orders" },
+      },
+    },
+    { $sort: { ordersCount: -1 } },
+  ];
+
+  // Execute the aggregation pipeline
+  const result = await db.get("customers").aggregate(pipeline).toArray();
+
+  return res.send(result);
 });
 // router.post(
 //   "/sign-up-nopass",

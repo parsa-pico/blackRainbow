@@ -35,7 +35,7 @@ class SMS {
   }
 
   static async sendCode(phoneNumber, code) {
-    const data = await this.sendSms(phoneNumber, 100000, [
+    const data = await this.sendSms(phoneNumber, 557994, [
       {
         name: "Code",
         value: code,

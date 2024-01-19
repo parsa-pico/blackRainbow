@@ -35,19 +35,52 @@ router.get("/", customerAuth, async (req, res) => {
       { $project: { pictures: 1, price: 1, productName: 1 } },
     ])
   ).toArray();
-  console.log(result);
-  return res.send(result);
-});
-router.get("/:itemId", customerAuth, async (req, res) => {
-  const itemId = new ObjectId(req.params.itemId);
-  const userId = new ObjectId(req.user._id);
-
-  const result = (await db.get("likes").findOne({ itemId, userId }))
-    ? true
-    : false;
 
   return res.send(result);
 });
+router.get("/admin-get", adminAuth, async (req, res) => {
+  const result = await (
+    await db.get("likes").aggregate([
+      {
+        $lookup: {
+          from: "items",
+          localField: "itemId",
+          foreignField: "_id",
+          as: "item",
+        },
+      },
+      {
+        $unwind: "$item",
+      },
+      {
+        $group: {
+          _id: "$item._id",
+          productName: { $first: "$item.productName" },
+          price: { $first: "$item.price" },
+          pictures: { $first: "$item.pictures" },
+          likesCount: { $sum: 1 },
+        },
+      },
+      { $sort: { likesCount: -1 } },
+      // {
+      //   $replaceRoot: { newRoot: "$item" },
+      // },
+      // { $project: { pictures: 1, price: 1, productName: 1 } },
+    ])
+  ).toArray();
+
+  return res.send(result);
+});
+// router.get("/:itemId", customerAuth, async (req, res) => {
+//   const itemId = new ObjectId(req.params.itemId);
+//   const userId = new ObjectId(req.user._id);
+
+//   const result = (await db.get("likes").findOne({ itemId, userId }))
+//     ? true
+//     : false;
+
+//   return res.send(result);
+// });
 
 router.post("/:itemId", customerAuth, async (req, res) => {
   const itemId = new ObjectId(req.params.itemId);
