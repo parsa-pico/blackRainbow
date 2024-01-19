@@ -87,6 +87,7 @@ router.post(
       quantity: parseInt(quantity),
       itemId: new ObjectId(req.params.itemId),
     };
+    quantity = Math.max(0, quantity);
     const query = { itemId: obj.itemId };
     if (options) obj["options"] = options; //TODO:check if these options are valid
     if (user) {
@@ -122,7 +123,7 @@ router.post(
       )
         return res.status(403).send({ msg: "این کالا مربوط به شما نیست" });
 
-      if (quantity === 0) {
+      if (quantity <= 0) {
         await db.deleteOne("carts", {
           _id: cartItem._id,
         });
