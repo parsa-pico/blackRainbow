@@ -92,7 +92,8 @@ class Order {
             postTrackingCode: { $first: "$postTrackingCode" },
             description: { $first: "$description" },
             schedule: { $first: "$schedule" },
-            // Add more common fields here
+            phoneNumber: { $first: "$phoneNumber" },
+
             items: {
               $push: {
                 itemId: "$item._id",
@@ -101,7 +102,6 @@ class Order {
                 price: "$orderItems.price",
                 options: "$orderItems.options",
                 picture: { $first: "$item.pictures" },
-                // Add more item-specific fields here
               },
             },
           },

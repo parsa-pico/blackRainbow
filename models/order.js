@@ -8,6 +8,7 @@ module.exports = {
   address: Joi.string().required().max(500),
   description: Joi.string().max(600),
   postalCode: Joi.string().required().max(30),
+  phoneNumber: Joi.string().required().length(11),
   schedule: Joi.date(),
   paymentMethod: Joi.number().required().min(1).max(2),
   paymentPicture: Joi.string().max(100),

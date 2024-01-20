@@ -12,7 +12,7 @@ const OrderStatus = require("../enums/orderStatus");
 const configs = require("../configs.json");
 const ordermanipulate = require("../models/orderManipulate");
 const SMS = require("../services/sms");
-const { setDateTimeToZero } = require("../utils/common");
+const { setDateTimeToZero, isLocalDB } = require("../utils/common");
 const persianStatus = {
   1: "در انتظار پرداخت",
   2: "پرداخت شده",
@@ -66,12 +66,18 @@ router.post(
   validate(orderSchema),
   async (req, res, next) => {
     const session = db.client.startSession();
-    try {
-      await session.withTransaction(run);
-    } catch (error) {
-      next(error);
-    } finally {
-      await session.endSession();
+    const queryOptions = {};
+    if (!isLocalDB) {
+      try {
+        queryOptions.session = session;
+        await session.withTransaction(run);
+      } catch (error) {
+        next(error);
+      } finally {
+        await session.endSession();
+      }
+    } else {
+      await run();
     }
 
     async function run() {
@@ -117,9 +123,12 @@ router.post(
       if (scheduledOrder) obj.schedule = scheduledOrder.schedule;
       if (obj.schedule) obj.schedule = setDateTimeToZero(obj.schedule);
 
-      const { insertedId } = await db.insertOne("orders", obj, undefined, {
-        session,
-      });
+      const { insertedId } = await db.insertOne(
+        "orders",
+        obj,
+        undefined,
+        queryOptions
+      );
 
       cart = cart.map((c) => {
         const obj = {
@@ -138,13 +147,13 @@ router.post(
           update: { $inc: { stock: -quantity }, $inc: { sold: quantity } },
         },
       }));
-      await db.getDbColletion("items").bulkWrite(bulkOperations, { session });
-      await db.insertMany("orderItems", cart, undefined, { session });
+      await db.getDbColletion("items").bulkWrite(bulkOperations, queryOptions);
+      await db.insertMany("orderItems", cart, undefined, queryOptions);
       await db.deleteMany(
         "carts",
         { userId: new ObjectId(order.userId) },
         undefined,
-        { session }
+        queryOptions
       );
       console.log("before sms");
       SMS.sendAdminNewPurchase().catch((err) => console.log(err));
@@ -169,6 +178,6 @@ router.put("/:id", adminAuth, validate(ordermanipulate), async (req, res) => {
 
   return res.send({ msg: "سفارش آپدیت شد" });
 });
-router.delete("/:id", adminAuth, async (req, res) => {});
+// router.delete("/:id", adminAuth, async (req, res) => {});
 
 module.exports = router;

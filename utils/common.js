@@ -58,6 +58,12 @@ function setDateTimeToZero(dateObj) {
   utcDate.setUTCHours(0, 0, 0, 0);
   return utcDate;
 }
+function isLocalDB() {
+  if (process.env.MONGO_URL === "mongodb://0.0.0.0:27017/blackRainbow")
+    return true;
+  else false;
+}
+exports.isLocalDB = isLocalDB;
 exports.codeExpired = codeExpired;
 exports.validate = validate;
 exports.validateDaysObject = validateDaysObject;
