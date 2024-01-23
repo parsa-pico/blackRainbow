@@ -48,7 +48,7 @@ async function setSiteMap() {
 }
 router.get("/", async (req, res) => {
   const root = path.resolve(__dirname, "..");
-  console.log(root);
+
   return res.sendFile(`${root}/sitemap.xml`);
 });
 module.exports = router;

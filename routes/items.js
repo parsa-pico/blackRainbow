@@ -98,6 +98,7 @@ router.get("/:id", getUser, async (req, res) => {
           brand: 1,
           enabled: 1,
           private: 1,
+          originalPrice: 1,
         },
       },
       {
@@ -142,7 +143,13 @@ router.post("/get-by-keyword", getUser, async (req, res) => {
   if (!page) page = 1;
   page = Math.max(1, page);
 
-  const projcetObj = { productName: 1, price: 1, pictures: 1, stock: 1 };
+  const projcetObj = {
+    productName: 1,
+    price: 1,
+    pictures: 1,
+    stock: 1,
+    originalPrice: 1,
+  };
   let searchObj = {};
   let result;
   let isAdmin = false;
@@ -261,7 +268,7 @@ router.post("/get-by-keyword", getUser, async (req, res) => {
   });
 });
 router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
-  let { category, subCategory, options } = req.body;
+  let { category, subCategory, options, offPrice, price } = req.body;
   const foundCategory = await checkCategory(category);
   const foundSubCategory = await checkCategory(subCategory);
   if (!foundCategory || !foundSubCategory)
@@ -282,6 +289,11 @@ router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
     options = options.map((opt) => new ObjectId(opt));
     obj.options = options;
   }
+  if (offPrice) {
+    obj.originalPrice = price;
+    obj.price = offPrice;
+  }
+  delete obj.offPrice;
   await db.insertOne("items", obj);
   return res.send("کالا ثبت شد");
 });
@@ -313,8 +325,10 @@ router.put("/:id", adminAuth, validate(itemSchema), async (req, res) => {
     obj.originalPrice = price;
     obj.price = offPrice;
   }
-  const updateObj = { $set: { obj } };
+  delete obj.offPrice;
+  const updateObj = { $set: { ...obj } };
   if (!offPrice) updateObj.$unset = { originalPrice: "" };
+
   const result = await db.get("items").updateOne(query, updateObj);
 
   return res.send("کالا ادیت شد");
