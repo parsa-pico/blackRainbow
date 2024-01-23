@@ -51,6 +51,7 @@ router.get("/", anonymousAuth(), async (req, res) => {
           price: "$cartItem.price",
           options: 1,
           itemId: 1,
+          originalPrice: "$cartItem.originalPrice",
         },
       },
     ])
@@ -140,47 +141,4 @@ router.post(
   }
 );
 
-// router.put("/:cartItemId", validate(cartSchema), async (req, res) => {
-//   const { user, sessionId } = req;
-//   if (!ObjectId.isValid(req.params.cartItemId))
-//     return res.status(400).send("ایدی کالا معتبر نیست");
-//   let { quantity, options } = req.body;
-
-//   quantity = parseInt(quantity);
-//   const cartItem = await db.findOne("carts", {
-//     _id: new ObjectId(req.params.cartItemId),
-//   });
-//   if (!cartItem) return res.status(404).send("کالا وجود ندارد");
-//   if (
-//     (user && cartItem.userId.toString() !== req.user._id) ||
-//     (!user && sessionId !== cartItem.sessionId)
-//   )
-//     return res.status(403).send({ msg: "این کالا مربوط به شما نیست" });
-
-//   const item = await db.findOne("items", { _id: cartItem.itemId });
-
-//   if (quantity > item.stock)
-//     return res.status(400).send("تعداد درخواستی بیشتر از موجودی انبار است");
-//   if (quantity === 0) {
-//     await db.deleteOne("carts", {
-//       _id: new ObjectId(req.params.cartItemId),
-//     });
-//     return res.send("کالا حذف شد");
-//   }
-//   const obj = { quantity };
-//   if (options) obj["options"] = options;
-//   await db.updateOne(
-//     "carts",
-//     {
-//       _id: new ObjectId(req.params.cartItemId),
-//     },
-//     obj
-//   );
-//   return res.send("کالا ادیت شد");
-// });
-// router.delete("/", customerAuth, async (req, res) => {
-
-//   await db.deleteMany("carts", { userId: new ObjectId(req.user._id) });
-//   return res.send("سبد خالی شد");
-// });
 module.exports = router;
