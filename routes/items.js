@@ -287,7 +287,8 @@ router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
 });
 
 router.put("/:id", adminAuth, validate(itemSchema), async (req, res) => {
-  let { category, options, subCategory } = req.body;
+  let { category, options, subCategory, offPrice, price } = req.body;
+
   const query = { _id: new ObjectId(req.params.id) };
   const item = await db.findOne("items", query);
   if (!item) return res.status(404).send("محصول پیدا نشد");
@@ -308,8 +309,14 @@ router.put("/:id", adminAuth, validate(itemSchema), async (req, res) => {
     options = options.map((opt) => new ObjectId(opt));
     obj.options = options;
   }
-  const result = await db.updateOne("items", query, obj);
-  console.log(result);
+  if (offPrice) {
+    obj.originalPrice = price;
+    obj.price = offPrice;
+  }
+  const updateObj = { $set: { obj } };
+  if (!offPrice) updateObj.$unset = { originalPrice: "" };
+  const result = await db.get("items").updateOne(query, updateObj);
+
   return res.send("کالا ادیت شد");
 });
 

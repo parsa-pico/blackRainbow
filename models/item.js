@@ -6,6 +6,7 @@ module.exports = {
   subCategory: Joi.string().required().max(255),
   brand: Joi.string().min(0).max(100),
   price: Joi.number().required().max(1e9),
+  offPrice: Joi.number().max(1e9),
   description: Joi.string().required().max(2000),
   stock: Joi.number().required(),
   private: Joi.boolean(),

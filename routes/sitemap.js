@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../services/mongodb");
-router.get("/", async (req, res) => {
+const fs = require("fs");
+const path = require("path");
+async function setSiteMap() {
   const items = await (
     await db.get("items").find({}).project({ _id: 1 })
   ).toArray();
@@ -40,6 +42,13 @@ router.get("/", async (req, res) => {
       ${itemsMap}
     
     </urlset> `;
-  return res.send(siteMap);
+  fs.writeFile("sitemap.xml", siteMap, (err) => {
+    console.log(err);
+  });
+}
+router.get("/", async (req, res) => {
+  const root = path.resolve(__dirname, "..");
+  console.log(root);
+  return res.sendFile(`${root}/sitemap.xml`);
 });
 module.exports = router;
