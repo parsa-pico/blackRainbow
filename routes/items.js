@@ -166,6 +166,8 @@ router.post("/get-by-keyword", getUser, async (req, res) => {
   }
 
   const sortBy = ItemSort[sortIndex] || (search ? ItemSort[1] : ItemSort[2]);
+
+  if (sortIndex === 8) searchObj.originalPrice = { $exists: true };
   const firstProject = {
     ...projcetObj,
     sold: 1,

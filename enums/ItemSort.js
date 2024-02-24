@@ -6,6 +6,7 @@ const ItemSort = {
   5: { sold: -1 }, //most sold
   6: { price: 1 }, //chipest
   7: { price: -1 }, //most expensive
+  8: { originalPrice: -1 }, // discounted products
 };
 
 module.exports = ItemSort;
