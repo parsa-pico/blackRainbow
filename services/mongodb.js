@@ -1,7 +1,7 @@
 const mongodb = require("mongodb");
 
 const mongodbEndpoint = process.env.MONGO_URL;
-const dataBase = "blackRainbow";
+const dataBase = "blackrainbow";
 
 module.exports = class DB {
   static client;
