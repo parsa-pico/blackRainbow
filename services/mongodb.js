@@ -8,7 +8,10 @@ module.exports = class DB {
   static get = this.getDbColletion;
   static getClient() {
     if (!this.client) {
-      this.client = new mongodb.MongoClient(mongodbEndpoint);
+      this.client = new mongodb.MongoClient(mongodbEndpoint, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
     }
     return this;
   }
