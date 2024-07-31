@@ -138,7 +138,7 @@ async function checkCategory(category) {
   return foundCategory;
 }
 router.post("/get-by-keyword", getUser, async (req, res) => {
-  const { search, category, subCategory, sortIndex } = req.body;
+  const { search, category, subCategory, sortIndex, enabled } = req.body;
   let { page } = req.body;
   if (!page) page = 1;
   page = Math.max(1, page);
@@ -157,6 +157,9 @@ router.post("/get-by-keyword", getUser, async (req, res) => {
 
   if (!req.user) searchObj.private = false;
   if (!isAdmin) searchObj.enabled = true;
+
+  if (isAdmin && enabled == "false") searchObj.enabled = false;
+
   if (category) searchObj.category = new ObjectId(category);
   if (subCategory) searchObj.subCategory = new ObjectId(subCategory);
   let options = {};
