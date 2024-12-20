@@ -1,6 +1,6 @@
 {
   "codeExpires": 120,
-  "postPrice": 550000,
+  "postPrice": 0,
   "adminFileLimit": 512,
   "customerFileLimit": 4000,
   "itemsPageLimit": 16

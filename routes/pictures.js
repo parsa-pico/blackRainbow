@@ -10,7 +10,7 @@ const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 const { getPicturePath } = require("../utils/common");
-const configs = require("../configs.json");
+
 const { upload_image } = require("../middlewares/upload");
 
 router.get("/:picturePath", async (req, res) => {
