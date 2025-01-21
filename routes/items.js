@@ -450,63 +450,6 @@ router.post("/round-prices", adminAuth, async (req, res) => {
   });
 });
 
-router.post("/update-price-by-keyword", adminAuth, async (req, res) => {
-  const { search, category, subCategory, operation, amount } = req.body;
-  if (typeof amount !== "number")
-    return res.status(400).send({ message: "مقدار باید عدد باشد" });
-  // Validate operation and amount
-  if (!["sum", "multiply"].includes(operation)) {
-    return res.status(400).send({ message: "عملیات باید جمع یا ضرب باشد" });
-  }
-
-  if (operation === "multiply" && (amount < 0.05 || amount > 2)) {
-    return res.status(400).send({
-      message: "عدد ضرب باید بین 0.05 و 2 باشد",
-    });
-  }
-
-  if (operation === "sum" && typeof amount !== "number") {
-    return res.status(400).send({ message: "جمع باید عدد باشد" });
-  }
-
-  let searchObj = {};
-
-  // Build search query
-  if (category) searchObj.category = new ObjectId(category);
-  if (subCategory) searchObj.subCategory = new ObjectId(subCategory);
-  if (search) {
-    searchObj.$text = { $search: search };
-  }
-  console.log(Math.ceil(amount * 10));
-
-  try {
-    // Determine the update operation
-    let updateOperation = {};
-    if (operation === "multiply") {
-      updateOperation = { $mul: { price: amount } };
-    } else if (operation === "sum") {
-      updateOperation = { $inc: { price: Math.ceil(amount * 10) } };
-    }
-
-    // Perform the update
-    const itemsCollection = db.get("items");
-    const result = await itemsCollection.updateMany(searchObj, updateOperation);
-    console.log("req body:", req.body);
-    console.log("result", result);
-
-    return res.send({
-      message: "قیمت ها تغییر یافت",
-      matchedCount: result.matchedCount,
-      modifiedCount: result.modifiedCount,
-    });
-  } catch (error) {
-    console.error("Error updating prices:", error);
-    return res
-      .status(500)
-      .send({ message: "An error occurred while updating prices." });
-  }
-});
-
 router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
   let { category, subCategory, options, offPrice, price } = req.body;
   const foundCategory = await checkCategory(category);
