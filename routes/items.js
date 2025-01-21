@@ -272,6 +272,241 @@ router.post("/get-by-keyword", getUser, async (req, res) => {
     sortBy,
   });
 });
+router.post("/update-price-by-keyword", adminAuth, async (req, res) => {
+  const { search, category, subCategory, operation, amount } = req.body;
+  if (typeof amount !== "number")
+    return res.status(400).send({ message: "مقدار باید عدد باشد" });
+  // Validate operation and amount
+  if (!["sum", "multiply"].includes(operation)) {
+    return res.status(400).send({ message: "عملیات باید جمع یا ضرب باشد" });
+  }
+
+  if (operation === "multiply" && (amount < 0.05 || amount > 2)) {
+    return res.status(400).send({
+      message: "عدد ضرب باید بین 0.05 و 2 باشد",
+    });
+  }
+
+  if (operation === "sum" && typeof amount !== "number") {
+    return res.status(400).send({ message: "جمع باید عدد باشد" });
+  }
+
+  let searchObj = {};
+
+  // Build search query
+  if (category) searchObj.category = new ObjectId(category);
+  if (subCategory) searchObj.subCategory = new ObjectId(subCategory);
+  if (search) {
+    searchObj.$text = { $search: search };
+  }
+
+  try {
+    // Determine the update operation
+    let updateOperation = {};
+    if (operation === "multiply") {
+      updateOperation = { $mul: { price: amount } };
+    } else if (operation === "sum") {
+      updateOperation = { $inc: { price: Math.ceil(amount * 10) } };
+    }
+
+    // Perform the update
+    const itemsCollection = db.get("items");
+    const result = await itemsCollection.updateMany(searchObj, updateOperation);
+    console.log("req body:", req.body);
+    console.log("result", result);
+
+    return res.send({
+      message: "قیمت ها تغییر یافت",
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error("Error updating prices:", error);
+    return res
+      .status(500)
+      .send({ message: "An error occurred while updating prices." });
+  }
+});
+router.post("/set-discount", adminAuth, async (req, res) => {
+  const { category, search, subCategory, discount } = req.body;
+
+  // Validate discount
+  if (typeof discount !== "number" || discount <= 0 || discount >= 1) {
+    return res.status(400).send({
+      message: "تخفیف باید بین صفر و یک باشد",
+    });
+  }
+
+  // Build search query
+  let searchObj = {};
+  if (category) searchObj.category = new ObjectId(category);
+  if (subCategory) searchObj.subCategory = new ObjectId(subCategory);
+  if (search) {
+    searchObj.$text = { $search: search };
+  }
+  // Perform the discount operation
+  const itemsCollection = db.get("items");
+
+  const result = await itemsCollection.updateMany(searchObj, [
+    {
+      $set: {
+        originalPrice: {
+          $cond: {
+            if: { $not: ["$originalPrice"] }, // If `originalPrice` doesn't exist
+            then: "$price", // Set `originalPrice` to current `price`
+            else: "$originalPrice", // Keep existing `originalPrice`
+          },
+        },
+      },
+    },
+    {
+      $set: {
+        price: {
+          $multiply: ["$originalPrice", 1 - discount], // Apply discount to `originalPrice`
+        },
+      },
+    },
+  ]);
+
+  return res.send({
+    message: "تخفیف اعمال شد",
+    matchedCount: result.matchedCount,
+    modifiedCount: result.modifiedCount,
+  });
+});
+router.post("/remove-discount", adminAuth, async (req, res) => {
+  const { category, search, subCategory } = req.body;
+
+  // Build search query
+  let searchObj = {};
+  if (category) searchObj.category = new ObjectId(category);
+  if (subCategory) searchObj.subCategory = new ObjectId(subCategory);
+  if (search) {
+    searchObj.$text = { $search: search };
+  }
+
+  // Perform the remove discount operation
+  const itemsCollection = db.get("items");
+
+  const result = await itemsCollection.updateMany(
+    { ...searchObj, originalPrice: { $exists: true } }, // Ensure `originalPrice` exists
+    [
+      {
+        $set: {
+          price: "$originalPrice", // Revert `price` back to `originalPrice`
+        },
+      },
+      {
+        $unset: "originalPrice", // Remove the `originalPrice` field
+      },
+    ]
+  );
+
+  return res.send({
+    message: "تخفیف حذف شد",
+    matchedCount: result.matchedCount,
+    modifiedCount: result.modifiedCount,
+  });
+});
+router.post("/round-prices", adminAuth, async (req, res) => {
+  // Perform the rounding operation
+  const itemsCollection = db.get("items");
+
+  const result = await itemsCollection.updateMany({}, [
+    {
+      $set: {
+        price: {
+          $round: [{ $divide: ["$price", 10000] }, 0], // Round to nearest 1,000
+        },
+      },
+    },
+    {
+      $set: {
+        price: { $multiply: ["$price", 10000] }, // Restore scaled price
+      },
+    },
+    {
+      $set: {
+        originalPrice: {
+          $cond: {
+            if: { $gt: ["$originalPrice", null] }, // If `originalPrice` exists
+            then: {
+              $multiply: [
+                { $round: [{ $divide: ["$originalPrice", 10000] }, 0] },
+                10000,
+              ],
+            },
+            else: "$originalPrice", // Leave as-is if it doesn't exist
+          },
+        },
+      },
+    },
+  ]);
+
+  return res.send({
+    message: "قیمت‌ها گرد شدند",
+    matchedCount: result.matchedCount,
+    modifiedCount: result.modifiedCount,
+  });
+});
+
+router.post("/update-price-by-keyword", adminAuth, async (req, res) => {
+  const { search, category, subCategory, operation, amount } = req.body;
+  if (typeof amount !== "number")
+    return res.status(400).send({ message: "مقدار باید عدد باشد" });
+  // Validate operation and amount
+  if (!["sum", "multiply"].includes(operation)) {
+    return res.status(400).send({ message: "عملیات باید جمع یا ضرب باشد" });
+  }
+
+  if (operation === "multiply" && (amount < 0.05 || amount > 2)) {
+    return res.status(400).send({
+      message: "عدد ضرب باید بین 0.05 و 2 باشد",
+    });
+  }
+
+  if (operation === "sum" && typeof amount !== "number") {
+    return res.status(400).send({ message: "جمع باید عدد باشد" });
+  }
+
+  let searchObj = {};
+
+  // Build search query
+  if (category) searchObj.category = new ObjectId(category);
+  if (subCategory) searchObj.subCategory = new ObjectId(subCategory);
+  if (search) {
+    searchObj.$text = { $search: search };
+  }
+  console.log(Math.ceil(amount * 10));
+
+  try {
+    // Determine the update operation
+    let updateOperation = {};
+    if (operation === "multiply") {
+      updateOperation = { $mul: { price: amount } };
+    } else if (operation === "sum") {
+      updateOperation = { $inc: { price: Math.ceil(amount * 10) } };
+    }
+
+    // Perform the update
+    const itemsCollection = db.get("items");
+    const result = await itemsCollection.updateMany(searchObj, updateOperation);
+    console.log("req body:", req.body);
+    console.log("result", result);
+
+    return res.send({
+      message: "قیمت ها تغییر یافت",
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error("Error updating prices:", error);
+    return res
+      .status(500)
+      .send({ message: "An error occurred while updating prices." });
+  }
+});
+
 router.post("/", adminAuth, validate(itemSchema), async (req, res) => {
   let { category, subCategory, options, offPrice, price } = req.body;
   const foundCategory = await checkCategory(category);
