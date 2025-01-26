@@ -5,7 +5,6 @@ module.exports = function () {
     "BACK_END_URL",
     "SMS_KEY",
     "FRONT_BASE_URL",
-    "ID_PAY_AUTH_KEY",
     "ADMIN_PHONE_NUMBER",
     "SECURE",
     "SAME_SITE",
