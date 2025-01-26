@@ -1,17 +1,8 @@
-const { S3Client } = require("@aws-sdk/client-s3"); // Import S3Client from v3
 const multerS3 = require("multer-s3");
 const multer = require("multer");
 const configs = require("../configs.json");
 const path = require("path");
-const s3 = new S3Client({
-  endpoint: process.env.LIARA_ENDPOINT, // Your S3-compatible endpoint
-  region: "default", // Adjust region if needed
-  credentials: {
-    accessKeyId: process.env.LIARA_ACCESS_KEY,
-    secretAccessKey: process.env.LIARA_SECRET_KEY,
-  },
-});
-
+const { s3 } = require("../services/s3Bucket");
 const upload_image = function (req, res, next) {
   let maxSize = 1024;
   maxSize *= req.user.isAdmin

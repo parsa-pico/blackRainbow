@@ -12,7 +12,9 @@ const path = require("path");
 const { getPicturePath } = require("../utils/common");
 
 const { upload_image } = require("../middlewares/upload");
-
+const { DeleteObjectCommand } = require("@aws-sdk/client-s3");
+const { s3 } = require("../services/s3Bucket");
+const bucketName = process.env.LIARA_BUCKET_NAME;
 // router.get("/:picturePath", async (req, res) => {
 //   const filePath = getPicturePath(req.params.picturePath);
 //   // fs.access(filePath, fs.constants.F_OK, (err) => {
@@ -24,10 +26,12 @@ const { upload_image } = require("../middlewares/upload");
 // });
 
 router.post("/", adminAuth, upload_image, async (req, res) => {
+  console.log(req.file);
+
   return res.send({
-    fileName: req.file.filename,
+    fileName: req.file.key,
     msg: "عکس اپلود شد",
-    filePath: req.file.path,
+    filePath: req.file.location,
   });
 });
 
@@ -37,9 +41,9 @@ router.post(
   upload_image,
   async (req, res) => {
     return res.send({
-      fileName: req.file.filename,
+      fileName: req.file.key,
       msg: "عکس اپلود شد",
-      filePath: req.file.path,
+      filePath: req.file.location,
     });
   }
 );
@@ -75,18 +79,23 @@ router.post(
 //     });
 //   }
 // );
-// router.delete("/:picturePath", adminAuth, async (req, res) => {
-//   const { picturePath } = req.params;
-//   const filePath = getPicturePath(picturePath);
-//   fs.access(filePath, fs.constants.F_OK, (err) => {
-//     console.log("err", err);
-//     if (err) return res.status(404).send("فایل وجود ندارد");
-//     fs.unlink(filePath, (err) => {
-//       if (err) return res.status(500).send("مشکلی در پاک کردن فایل پیش آمد");
-//       console.log("err del:", err);
-//       return res.send({ msg: "فایل پاک شد" });
-//     });
-//   });
-// });
+
+router.delete("/:picturePath", adminAuth, async (req, res) => {
+  const { picturePath } = req.params;
+
+  try {
+    const command = new DeleteObjectCommand({
+      Bucket: bucketName,
+      Key: picturePath,
+    });
+
+    const response = await s3.send(command);
+    console.log("File deleted successfully:", response);
+    return res.send({ msg: "فایل پاک شد" });
+  } catch (error) {
+    console.error("Error deleting file:", error);
+    return res.status(500).send("مشکلی در پاک کردن فایل پیش آمد");
+  }
+});
 
 module.exports = router;
