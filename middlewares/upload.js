@@ -1,20 +1,18 @@
-const path = require("path");
+const { S3Client } = require("@aws-sdk/client-s3"); // Import S3Client from v3
+const multerS3 = require("multer-s3");
 const multer = require("multer");
 const configs = require("../configs.json");
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./pictures");
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(
-      null,
-      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
-    );
+const path = require("path");
+const s3 = new S3Client({
+  endpoint: process.env.LIARA_ENDPOINT, // Your S3-compatible endpoint
+  region: "default", // Adjust region if needed
+  credentials: {
+    accessKeyId: process.env.LIARA_ACCESS_KEY,
+    secretAccessKey: process.env.LIARA_SECRET_KEY,
   },
 });
 
-upload_image = function (req, res, next) {
+const upload_image = function (req, res, next) {
   let maxSize = 1024;
   maxSize *= req.user.isAdmin
     ? configs.adminFileLimit
@@ -23,8 +21,17 @@ upload_image = function (req, res, next) {
   const fileSize = maxSize;
 
   const upload = multer({
-    storage,
-
+    storage: multerS3({
+      s3,
+      bucket: process.env.LIARA_BUCKET_NAME, // Your S3 bucket name
+      key: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        cb(
+          null,
+          `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`
+        );
+      },
+    }),
     limits: {
       fileSize,
     },
@@ -44,9 +51,18 @@ upload_image = function (req, res, next) {
   upload.single("picture")(req, res, function (err) {
     if (err) {
       next(err);
+    } else {
+      req.fileInfo = {
+        size: req.file.size,
+        url: req.file.location,
+        name: req.file.key,
+        type: req.file.mimetype,
+      };
+      next();
     }
-    next();
   });
 };
 
-exports.upload_image = upload_image;
+module.exports = {
+  upload_image,
+};
