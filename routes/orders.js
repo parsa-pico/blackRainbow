@@ -1,30 +1,30 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const db = require("../services/mongodb");
-const adminAuth = require("../middlewares/adminAuth");
-const orderSchema = require("../models/order");
-const { ObjectId } = require("mongodb");
-const customerAuth = require("../middlewares/customerAuth");
-const validate = require("../middlewares/validate");
-const Order = require("../entities/Order");
-const PaymentMethod = require("../enums/paymentMethod");
-const OrderStatus = require("../enums/orderStatus");
-const configs = require("../configs.json");
-const ordermanipulate = require("../models/orderManipulate");
-const SMS = require("../services/sms");
-const { setDateTimeToZero, isLocalDB } = require("../utils/common");
+const db = require('../services/mongodb');
+const adminAuth = require('../middlewares/adminAuth');
+const orderSchema = require('../models/order');
+const { ObjectId } = require('mongodb');
+const customerAuth = require('../middlewares/customerAuth');
+const validate = require('../middlewares/validate');
+const Order = require('../entities/Order');
+const PaymentMethod = require('../enums/paymentMethod');
+const OrderStatus = require('../enums/orderStatus');
+const configs = require('../configs.json');
+const ordermanipulate = require('../models/orderManipulate');
+const SMS = require('../services/sms');
+const { setDateTimeToZero, isLocalDB } = require('../utils/common');
 const persianStatus = {
-  1: "در انتظار پرداخت",
-  2: "پرداخت شده",
-  6: "پردازش شده",
-  3: "ارسال شده",
-  4: "پرداخت ناموفق",
-  5: "کنسل شده",
+  1: 'در انتظار پرداخت',
+  2: 'پرداخت شده',
+  6: 'پردازش شده',
+  3: 'ارسال شده',
+  4: 'پرداخت ناموفق',
+  5: 'کنسل شده',
 };
-router.get("/", customerAuth, async (req, res) => {
+router.get('/', customerAuth, async (req, res) => {
   const query = { userId: new ObjectId(req.user._id) };
   const orders = await db
-    .getDbColletion("orders")
+    .getDbColletion('orders')
     .find(query)
     .sort({ _id: -1 })
     .project({ status: 1, createdAt: 1, totalPrice: 1, paymentMethod: 1 })
@@ -33,17 +33,17 @@ router.get("/", customerAuth, async (req, res) => {
   return res.send({ orders, OrderStatus: persianStatus });
 });
 
-router.post("/admin-get", adminAuth, async (req, res) => {
+router.post('/admin-get', adminAuth, async (req, res) => {
   const { phoneNumber } = req.body;
 
   const ordersQuery = {};
   if (phoneNumber) {
-    const user = await db.findOne("customers", { phoneNumber });
-    if (!user) return res.status(404).send("کاربر یافت نشد");
+    const user = await db.findOne('customers', { phoneNumber });
+    if (!user) return res.status(404).send('کاربر یافت نشد');
     ordersQuery.userId = user._id;
   }
   const orders = await db
-    .getDbColletion("orders")
+    .getDbColletion('orders')
     .find(ordersQuery)
     .sort({ _id: -1 })
     .project({ status: 1, createdAt: 1, totalPrice: 1, paymentMethod: 1 })
@@ -52,16 +52,16 @@ router.post("/admin-get", adminAuth, async (req, res) => {
   return res.send({ orders, OrderStatus: persianStatus });
 });
 
-router.get("/:id", customerAuth, async (req, res, next) => {
+router.get('/:id', customerAuth, async (req, res, next) => {
   const order = new Order();
   const result = await order.getOrder(req.params.id);
-  if (!result) return res.status(404).send("خرید پیدا نشد");
+  if (!result) return res.status(404).send('خرید پیدا نشد');
 
   return res.send({ result, OrderStatus: persianStatus });
 });
 
 router.post(
-  "/submitPurchase",
+  '/submitPurchase',
   customerAuth,
   validate(orderSchema),
   async (req, res, next) => {
@@ -86,7 +86,7 @@ router.post(
         req.body.paymentMethod === PaymentMethod.cardPayment &&
         !req.body.paymentPicture
       )
-        return res.status(400).send({ msg: "عکس فیش الزامی است" });
+        return res.status(400).send({ msg: 'عکس فیش الزامی است' });
 
       const order = new Order(req.user._id);
       let cart = await order.getCart();
@@ -96,16 +96,16 @@ router.post(
       }
 
       if (cart.length === 0)
-        return res.status(400).send("سبد خرید شما خالی است");
+        return res.status(400).send('سبد خرید شما خالی است');
       let totalPrice = await order.getTotalPrice();
 
       const scheduledOrder = await Order.getScheduledOrder(req.user._id);
       if (scheduledOrder && req.body.schedule) {
         return res
           .status(400)
-          .send({ msg: "شما یک سفارش به تاخیر انداخته دارید" });
+          .send({ msg: 'شما یک سفارش به تاخیر انداخته دارید' });
       }
-      const postPrice = scheduledOrder ? 0 : configs.postPrice;
+      const postPrice = scheduledOrder ? 0 : parseInt(process.env.POST_PRICE);
 
       totalPrice += postPrice;
 
@@ -124,10 +124,10 @@ router.post(
       if (obj.schedule) obj.schedule = setDateTimeToZero(obj.schedule);
 
       const { insertedId } = await db.insertOne(
-        "orders",
+        'orders',
         obj,
         undefined,
-        queryOptions
+        queryOptions,
       );
 
       cart = cart.map((c) => {
@@ -147,36 +147,36 @@ router.post(
           update: { $inc: { stock: -quantity }, $inc: { sold: quantity } },
         },
       }));
-      await db.getDbColletion("items").bulkWrite(bulkOperations, queryOptions);
-      await db.insertMany("orderItems", cart, undefined, queryOptions);
+      await db.getDbColletion('items').bulkWrite(bulkOperations, queryOptions);
+      await db.insertMany('orderItems', cart, undefined, queryOptions);
       await db.deleteMany(
-        "carts",
+        'carts',
         { userId: new ObjectId(order.userId) },
         undefined,
-        queryOptions
+        queryOptions,
       );
-      console.log("before sms");
+      console.log('before sms');
       SMS.sendAdminNewPurchase().catch((err) => console.log(err));
-      console.log("after sms");
+      console.log('after sms');
 
-      return res.send({ insertedId, msg: "خرید ثبت شد" });
+      return res.send({ insertedId, msg: 'خرید ثبت شد' });
     }
-  }
+  },
 );
 
-router.put("/:id", adminAuth, validate(ordermanipulate), async (req, res) => {
+router.put('/:id', adminAuth, validate(ordermanipulate), async (req, res) => {
   const { status, postTrackingCode } = req.body;
   const obj = { status, postTrackingCode, updatedAt: new Date() };
 
   const result = await db.updateOne(
-    "orders",
+    'orders',
     { _id: new ObjectId(req.params.id) },
-    obj
+    obj,
   );
   if (result.matchedCount === 0)
-    return res.status(404).send({ msg: "سفارش پیدا نشد" });
+    return res.status(404).send({ msg: 'سفارش پیدا نشد' });
 
-  return res.send({ msg: "سفارش آپدیت شد" });
+  return res.send({ msg: 'سفارش آپدیت شد' });
 });
 // router.delete("/:id", adminAuth, async (req, res) => {});
 
