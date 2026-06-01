@@ -1,27 +1,27 @@
-const { ObjectId } = require("bson");
-const express = require("express");
+const { ObjectId } = require('bson');
+const express = require('express');
 const router = express.Router();
-const jwt = require("jsonwebtoken");
-const db = require("../services/mongodb");
-const { default: axios } = require("axios");
-const bcrypt = require("bcrypt");
-const customerAuth = require("../middlewares/customerAuth");
-const adminAuth = require("../middlewares/adminAuth");
-const validate = require("../middlewares/validate");
+const jwt = require('jsonwebtoken');
+const db = require('../services/mongodb');
+const { default: axios } = require('axios');
+// const bcrypt = require("bcrypt");
+const customerAuth = require('../middlewares/customerAuth');
+const adminAuth = require('../middlewares/adminAuth');
+const validate = require('../middlewares/validate');
 const {
   generateRandomCode,
   codeExpired,
   cookieOptions,
-} = require("../utils/common.js");
-const loginSchema = require("../models/login");
-const customerSchema = require("../models/customer");
-const phoneNumberSchema = require("../models/phoneNumer");
-const loginSmsSchema = require("../models/login-sms");
-const config = require("../configs.json");
-const { v4: uuidv4 } = require("uuid");
-const { transfer } = require("../controllers/transferCart");
-const anonymousAuth = require("../middlewares/anonymousAuth");
-const SMS = require("../services/sms");
+} = require('../utils/common.js');
+const loginSchema = require('../models/login');
+const customerSchema = require('../models/customer');
+const phoneNumberSchema = require('../models/phoneNumer');
+const loginSmsSchema = require('../models/login-sms');
+const config = require('../configs.json');
+const { v4: uuidv4 } = require('uuid');
+const { transfer } = require('../controllers/transferCart');
+const anonymousAuth = require('../middlewares/anonymousAuth');
+const SMS = require('../services/sms');
 // const countCart = require("../controllers/countCart");
 
 // router.post("/login", validate(loginSchema), async (req, res) => {
@@ -45,11 +45,11 @@ const SMS = require("../services/sms");
 //   return res.send(token);
 // });
 
-router.post("/send-code", validate(phoneNumberSchema), async (req, res) => {
+router.post('/send-code', validate(phoneNumberSchema), async (req, res) => {
   const { phoneNumber } = req.body;
-  const user = await db.findOne("customers", { phoneNumber });
+  const user = await db.findOne('customers', { phoneNumber });
   if (!user) {
-    await db.insertOne("customers", {
+    await db.insertOne('customers', {
       phoneNumber,
       codeTime: new Date(),
       code: generateRandomCode(4).toString(),
@@ -64,7 +64,7 @@ router.post("/send-code", validate(phoneNumberSchema), async (req, res) => {
 
   if (!isExpired)
     return res.send({
-      msg: "کد ارسال شده است،چند دقیقه صبر کنید",
+      msg: 'کد ارسال شده است،چند دقیقه صبر کنید',
       codeExpires: remaning,
     });
   const randomCode = generateRandomCode(4).toString();
@@ -74,33 +74,33 @@ router.post("/send-code", validate(phoneNumberSchema), async (req, res) => {
     console.log(data);
   } catch (error) {
     console.log(error);
-    return res.status(499).send("سامانه پیامکی در دسترس نمیباشد");
+    return res.status(499).send('سامانه پیامکی در دسترس نمیباشد');
   }
 
   const result = await db.updateOne(
-    "customers",
+    'customers',
     { phoneNumber },
-    { code: randomCode, codeTime: new Date() }
+    { code: randomCode, codeTime: new Date() },
   );
   console.log(result);
-  return res.send({ msg: "کد ارسال شد", codeExpires: config.codeExpires });
+  return res.send({ msg: 'کد ارسال شد', codeExpires: config.codeExpires });
 });
 router.post(
-  "/login-sms",
+  '/login-sms',
   anonymousAuth(),
   validate(loginSmsSchema),
   async (req, res, next) => {
     const { phoneNumber, code } = req.body;
 
-    const user = await db.findOne("customers", { phoneNumber });
+    const user = await db.findOne('customers', { phoneNumber });
 
-    if (!user) return res.status(404).send("کاربر یافت نشد");
+    if (!user) return res.status(404).send('کاربر یافت نشد');
     const threshold = config.codeExpires; //minutes
     const { isExpired, remaning } = codeExpired(user.codeTime, threshold);
-    if (isExpired) return res.status(403).send("کد منقضی شده است");
+    if (isExpired) return res.status(403).send('کد منقضی شده است');
 
     const correctCode = user.code === code;
-    if (!correctCode) return res.status(400).send("کد اشتباه است");
+    if (!correctCode) return res.status(400).send('کد اشتباه است');
     const { firstName, lastName, _id, isAdmin } = user;
     const userInfo = {
       firstName,
@@ -110,7 +110,7 @@ router.post(
       isAdmin: isAdmin || false,
     };
     const token = jwt.sign(userInfo, process.env.JWT_PRIVATE_KEY, {
-      expiresIn: "30d",
+      expiresIn: '30d',
     });
     userInfo.exp = jwt.decode(token).exp * 1000; //convert it to millis
 
@@ -119,25 +119,25 @@ router.post(
     next();
   },
 
-  transfer
+  transfer,
 );
-router.post("/login-anonymous", async (req, res) => {
+router.post('/login-anonymous', async (req, res) => {
   let sessionId;
   if (req.cookies && req.cookies.sessionId) sessionId = req.cookies.sessionId;
   else sessionId = uuidv4();
 
-  res.cookie("sessionId", sessionId, {
+  res.cookie('sessionId', sessionId, {
     ...cookieOptions,
     httpOnly: false,
   });
-  res.clearCookie("token", cookieOptions);
-  res.send({ msg: "session id sent", sessionId });
+  res.clearCookie('token', cookieOptions);
+  res.send({ msg: 'session id sent', sessionId });
 });
-router.post("/logout", async (req, res) => {
-  res.clearCookie("token", cookieOptions);
-  res.send({ msg: "خروج انجام شد" });
+router.post('/logout', async (req, res) => {
+  res.clearCookie('token', cookieOptions);
+  res.send({ msg: 'خروج انجام شد' });
 });
-router.get("/", adminAuth, async (req, res) => {
+router.get('/', adminAuth, async (req, res) => {
   // const query = {};
   // const phoneNumber = req.query.phoneNumber;
   // if (phoneNumber) query.phoneNumber = phoneNumber;
@@ -145,10 +145,10 @@ router.get("/", adminAuth, async (req, res) => {
   const pipeline = [
     {
       $lookup: {
-        from: "orders",
-        localField: "_id",
-        foreignField: "userId",
-        as: "customer_orders",
+        from: 'orders',
+        localField: '_id',
+        foreignField: 'userId',
+        as: 'customer_orders',
       },
     },
     {
@@ -156,14 +156,14 @@ router.get("/", adminAuth, async (req, res) => {
         _id: 1,
         name: 1,
         phoneNumber: 1,
-        ordersCount: { $size: "$customer_orders" },
+        ordersCount: { $size: '$customer_orders' },
       },
     },
     { $sort: { ordersCount: -1 } },
   ];
 
   // Execute the aggregation pipeline
-  const result = await db.get("customers").aggregate(pipeline).toArray();
+  const result = await db.get('customers').aggregate(pipeline).toArray();
 
   return res.send(result);
 });
